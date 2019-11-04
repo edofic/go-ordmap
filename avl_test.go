@@ -156,12 +156,13 @@ func TestGet(t *testing.T) {
 	var tree *Node
 	tree = tree.Insert(intKey(1), "foo")
 	tree = tree.Insert(intKey(2), "bar")
+	tree = tree.Insert(intKey(0), "bar")
 
 	value, ok := tree.Get(intKey(1))
 	require.True(t, ok)
 	require.Equal(t, "foo", value)
 
-	value, ok = tree.Get(intKey(2))
+	value, ok = tree.Get(intKey(0))
 	require.True(t, ok)
 	require.Equal(t, "bar", value)
 
@@ -181,6 +182,15 @@ func TestMinMax(t *testing.T) {
 
 	require.Equal(t, &Entry{Key: intKey(1), Value: "foo"}, tree.Min())
 	require.Equal(t, &Entry{Key: intKey(3), Value: "baz"}, tree.Max())
+}
+
+func TestRemoveMissing(t *testing.T) {
+	var tree *Node
+	tree = tree.Insert(intKey(1), "foo")
+	tree = tree.Insert(intKey(2), "bar")
+	require.Equal(t, 2, tree.Len())
+	tree.Remove(intKey(0))
+	require.Equal(t, 2, tree.Len())
 }
 
 //func TestIterValues(t *testing.T) {
