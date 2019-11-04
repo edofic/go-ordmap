@@ -211,3 +211,22 @@ func (node *Node) Entries() []Entry {
 	step(node)
 	return elems
 }
+
+func (node *Node) extreme(dir int) *Entry {
+	if node == nil {
+		return nil
+	}
+	child := node.children[dir]
+	if child != nil {
+		return child.extreme(dir)
+	}
+	return &node.Entry
+}
+
+func (node *Node) Min() *Entry {
+	return node.extreme(0)
+}
+
+func (node *Node) Max() *Entry {
+	return node.extreme(1)
+}

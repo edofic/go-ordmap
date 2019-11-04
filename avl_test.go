@@ -170,6 +170,19 @@ func TestGet(t *testing.T) {
 	require.Nil(t, value)
 }
 
+func TestMinMax(t *testing.T) {
+	var tree *Node
+	require.Nil(t, tree.Min())
+	require.Nil(t, tree.Max())
+
+	tree = tree.Insert(intKey(1), "foo")
+	tree = tree.Insert(intKey(2), "bar")
+	tree = tree.Insert(intKey(3), "baz")
+
+	require.Equal(t, &Entry{Key: intKey(1), Value: "foo"}, tree.Min())
+	require.Equal(t, &Entry{Key: intKey(3), Value: "baz"}, tree.Max())
+}
+
 //func TestIterValues(t *testing.T) {
 //	var tree *Node
 //	N := 100
