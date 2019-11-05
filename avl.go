@@ -274,7 +274,6 @@ func (i *Iterator) Value() Value {
 }
 
 func (i *Iterator) Next() {
-LOOP:
 	for len(i.stack) > 0 {
 		frame := i.stack[len(i.stack)-1]
 		switch frame.state {
@@ -290,7 +289,7 @@ LOOP:
 		case 2:
 			i.currentEntry = frame.node.Entry
 			frame.state = 3
-			break LOOP
+			return
 		case 3:
 			// override frame - tail call optimisation
 			i.stack[len(i.stack)-1] = &iteratorStackFrame{node: frame.node.children[1-i.direction], state: 0}
