@@ -193,25 +193,25 @@ func TestRemoveMissing(t *testing.T) {
 	require.Equal(t, 2, tree.Len())
 }
 
-//func TestIterValues(t *testing.T) {
-//	var tree *Node
-//	N := 100
-//	for i := 0; i < N; i++ {
-//		tree = tree.Insert(intKey(i), i)
-//	}
-//
-//	valuesFromEntries := make([]int, N)
-//	for i, entry := range tree.Entries() {
-//		valuesFromEntries[i] = entry.Value.(int)
-//	}
-//
-//	valuesFromIterator := make([]int, 0, N)
-//	for iter := tree.IterValues(); !iter.Done; iter.Next() {
-//		valuesFromIterator = append(valuesFromIterator, iter.Value.(int))
-//	}
-//
-//	require.Equal(t, valuesFromEntries, valuesFromIterator)
-//}
+func TestIterValues(t *testing.T) {
+	var tree *Node
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(intKey(i), i)
+	}
+
+	valuesFromEntries := make([]int, N)
+	for i, entry := range tree.Entries() {
+		valuesFromEntries[i] = entry.Value.(int)
+	}
+
+	valuesFromIterator := make([]int, 0, N)
+	for iter := tree.Iterator(); !iter.Done(); iter.Next() {
+		valuesFromIterator = append(valuesFromIterator, iter.Value().(int))
+	}
+
+	require.Equal(t, valuesFromEntries, valuesFromIterator)
+}
 
 func BenchmarkMap(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {

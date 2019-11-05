@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type Key interface {
 	Less(Key) bool
 	Eq(Key) bool
@@ -229,4 +231,66 @@ func (node *Node) Min() *Entry {
 
 func (node *Node) Max() *Entry {
 	return node.extreme(1)
+}
+
+func (node *Node) Iterator() *Iterator {
+	return newIterator(node)
+}
+
+type iteratorStackFrame struct {
+	node  *Node
+	state int8
+}
+
+type Iterator struct {
+	stack        []*iteratorStackFrame
+	currentEntry Entry
+}
+
+func newIterator(node *Node) *Iterator {
+	iter := &Iterator{
+		stack: []*iteratorStackFrame{{node: node, state: 0}},
+	}
+	iter.Next()
+	return iter
+}
+
+func (i *Iterator) Done() bool {
+	return len(i.stack) == 0
+}
+
+func (i *Iterator) Key() Key {
+	return i.currentEntry.Key
+}
+
+func (i *Iterator) Value() Value {
+	return i.currentEntry.Value
+}
+
+func (i *Iterator) Next() {
+LOOP:
+	for len(i.stack) > 0 {
+		frame := i.stack[len(i.stack)-1]
+		switch frame.state {
+		case 0:
+			if frame.node == nil {
+				i.stack = i.stack[:len(i.stack)-1] // pop
+			} else {
+				frame.state = 1
+			}
+		case 1:
+			i.stack = append(i.stack, &iteratorStackFrame{node: frame.node.children[0], state: 0})
+			frame.state = 2
+		case 2:
+			i.currentEntry = frame.node.Entry
+			frame.state = 3
+			break LOOP
+		case 3:
+			// override frame - tail call optimisation
+			i.stack[len(i.stack)-1] = &iteratorStackFrame{node: frame.node.children[1], state: 0}
+		default:
+			panic(fmt.Sprintf("Unknown state %v", frame.state))
+		}
+
+	}
 }
