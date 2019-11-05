@@ -234,7 +234,11 @@ func (node *Node) Max() *Entry {
 }
 
 func (node *Node) Iterator() *Iterator {
-	return newIterator(node)
+	return newIterator(node, 0)
+}
+
+func (node *Node) IteratorReverse() *Iterator {
+	return newIterator(node, 1)
 }
 
 type iteratorStackFrame struct {
@@ -243,13 +247,15 @@ type iteratorStackFrame struct {
 }
 
 type Iterator struct {
+	direction    int
 	stack        []*iteratorStackFrame
 	currentEntry Entry
 }
 
-func newIterator(node *Node) *Iterator {
+func newIterator(node *Node, direction int) *Iterator {
 	iter := &Iterator{
-		stack: []*iteratorStackFrame{{node: node, state: 0}},
+		direction: direction,
+		stack:     []*iteratorStackFrame{{node: node, state: 0}},
 	}
 	iter.Next()
 	return iter
@@ -279,7 +285,7 @@ LOOP:
 				frame.state = 1
 			}
 		case 1:
-			i.stack = append(i.stack, &iteratorStackFrame{node: frame.node.children[0], state: 0})
+			i.stack = append(i.stack, &iteratorStackFrame{node: frame.node.children[i.direction], state: 0})
 			frame.state = 2
 		case 2:
 			i.currentEntry = frame.node.Entry
@@ -287,7 +293,7 @@ LOOP:
 			break LOOP
 		case 3:
 			// override frame - tail call optimisation
-			i.stack[len(i.stack)-1] = &iteratorStackFrame{node: frame.node.children[1], state: 0}
+			i.stack[len(i.stack)-1] = &iteratorStackFrame{node: frame.node.children[1-i.direction], state: 0}
 		default:
 			panic(fmt.Sprintf("Unknown state %v", frame.state))
 		}

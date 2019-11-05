@@ -193,7 +193,7 @@ func TestRemoveMissing(t *testing.T) {
 	require.Equal(t, 2, tree.Len())
 }
 
-func TestIterValues(t *testing.T) {
+func TestIterator(t *testing.T) {
 	var tree *Node
 	N := 100
 	for i := 0; i < N; i++ {
@@ -209,7 +209,25 @@ func TestIterValues(t *testing.T) {
 	for iter := tree.Iterator(); !iter.Done(); iter.Next() {
 		valuesFromIterator = append(valuesFromIterator, iter.Value().(int))
 	}
+	require.Equal(t, valuesFromEntries, valuesFromIterator)
+}
 
+func TestIteratorReverse(t *testing.T) {
+	var tree *Node
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(intKey(i), i)
+	}
+
+	valuesFromEntries := make([]int, N)
+	for i, entry := range tree.Entries() {
+		valuesFromEntries[N-i-1] = entry.Value.(int)
+	}
+
+	valuesFromIterator := make([]int, 0, N)
+	for iter := tree.IteratorReverse(); !iter.Done(); iter.Next() {
+		valuesFromIterator = append(valuesFromIterator, iter.Value().(int))
+	}
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
 }
 
