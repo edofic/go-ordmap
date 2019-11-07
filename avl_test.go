@@ -14,15 +14,26 @@ type intKey int
 func (k intKey) Less(k2 Key) bool { return k < k2.(intKey) }
 func (k intKey) Eq(k2 Key) bool   { return k == k2.(intKey) }
 
-func validateDepth(t *testing.T, tree *Node) {
+func reprTree(n *Node) string {
+	if n == nil {
+		return "_"
+	}
+	if n.children[0] == nil && n.children[1] == nil {
+		return fmt.Sprintf("(%v)", n.Entry.Key)
+	}
+	return fmt.Sprintf("[%v %v %v]", reprTree(n.children[0]), n.Entry.Key, reprTree(n.children[1]))
+}
+
+func validateHeight(t *testing.T, tree *Node) {
 	if tree == nil {
 		return // empty is balanced
 	}
-	left := tree.children[0].depth()
-	right := tree.children[1].depth()
+	left := tree.children[0].Height()
+	right := tree.children[1].Height()
 	require.Contains(t, []int{-1, 0, 1}, right-left)
-	validateDepth(t, tree.children[0])
-	validateDepth(t, tree.children[1])
+	require.Equal(t, combinedDepth(tree.children[0], tree.children[1]), tree.h)
+	validateHeight(t, tree.children[0])
+	validateHeight(t, tree.children[1])
 }
 
 func validateOrdered(t *testing.T, tree *Node) {
@@ -32,13 +43,11 @@ func validateOrdered(t *testing.T, tree *Node) {
 	key := tree.Entry.Key
 	if tree.children[0] != nil {
 		leftKey := tree.children[0].Entry.Key
-		//fmt.Println("Checking keys", key, leftKey)
 		require.True(t, leftKey.Less(key) || key.Eq(leftKey))
 		validateOrdered(t, tree.children[0])
 	}
 	if tree.children[1] != nil {
 		rightKey := tree.children[1].Entry.Key
-		//fmt.Println("Checking keys", key, rightKey)
 		require.True(t, key.Less(rightKey) || key.Eq(rightKey))
 		validateOrdered(t, tree.children[1])
 	}
@@ -48,6 +57,7 @@ type TreeModel struct {
 	t     *testing.T
 	elems []Entry
 	tree  *Node
+	debug bool
 }
 
 func NewTreeModel(t *testing.T) *TreeModel {
@@ -55,6 +65,7 @@ func NewTreeModel(t *testing.T) *TreeModel {
 		t:     t,
 		elems: make([]Entry, 0),
 		tree:  nil,
+		debug: false, // toggle this for verbose tests
 	}
 }
 
@@ -77,8 +88,14 @@ func (m *TreeModel) Insert(value int) {
 			return m.elems[i].Key.Less(m.elems[j].Key)
 		})
 	}
+	if m.debug {
+		fmt.Println("Inserting key", key, "into", reprTree(m.tree))
+	}
 	m.tree = m.tree.Insert(key, 0)
-	validateDepth(m.t, m.tree)
+	if m.debug {
+		fmt.Println(reprTree(m.tree))
+	}
+	validateHeight(m.t, m.tree)
 	validateOrdered(m.t, m.tree)
 	require.Equal(m.t, m.elems, m.tree.Entries())
 }
@@ -105,8 +122,14 @@ func (m *TreeModel) Remove(value int) {
 	// delete
 	copy(m.elems[index:], m.elems[index+1:])
 	m.elems = m.elems[:len(m.elems)-1]
+	if m.debug {
+		fmt.Println("Remove value", key, "from", reprTree(m.tree))
+	}
 	m.tree = m.tree.Remove(key)
-	validateDepth(m.t, m.tree)
+	if m.debug {
+		fmt.Println(reprTree(m.tree))
+	}
+	validateHeight(m.t, m.tree)
 	validateOrdered(m.t, m.tree)
 	require.Equal(m.t, m.elems, m.tree.Entries())
 }

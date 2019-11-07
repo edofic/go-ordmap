@@ -16,7 +16,7 @@ type Entry struct {
 
 type Node struct {
 	Entry    Entry
-	balance  int8
+	h        int
 	children [2]*Node
 }
 
@@ -24,59 +24,31 @@ func (n Node) dup() *Node {
 	return &n
 }
 
-func (n *Node) depth() int {
+func (n *Node) Height() int {
 	if n == nil {
 		return 0
 	}
-	depthLeft := n.children[0].depth()
-	depthRight := n.children[1].depth()
-	var depth int
-	if depthLeft > depthRight {
-		depth = depthLeft
+	return n.h
+}
+
+func combinedDepth(n1, n2 *Node) int {
+	d1 := n1.Height()
+	d2 := n2.Height()
+	var d int
+	if d1 > d2 {
+		d = d1
 	} else {
-		depth = depthRight
+		d = d2
 	}
-	return depth + 1
+	return d + 1
 }
 
-func (node Node) singleRot(dir int) *Node {
-	tmp := node.children[1-dir].dup()
-	node.children[1-dir] = tmp.children[dir]
-	tmp.children[dir] = &node
-	return tmp
-}
-
-func (node Node) doubleRot(dir int) *Node {
-	tmp := node.children[1-dir].children[dir].dup()
-
-	node.children[1-dir] = node.children[1-dir].dup()
-	node.children[1-dir].children[dir] = tmp.children[1-dir]
-	tmp.children[1-dir] = node.children[1-dir]
-	node.children[1-dir] = tmp
-
-	tmp = node.children[1-dir].dup()
-	node.children[1-dir] = tmp.children[dir]
-	tmp.children[dir] = &node
-	return tmp
-}
-
-func (node *Node) adjustBalance(dir int, bal int8) {
-	n := node.children[dir].dup()
-	node.children[dir] = n
-	nn := n.children[1-dir].dup()
-	n.children[1-dir] = nn
-	switch nn.balance {
-	case 0:
-		node.balance = 0
-		n.balance = 0
-	case bal:
-		node.balance = -bal
-		n.balance = 0
-	default:
-		node.balance = 0
-		n.balance = bal
+func mkNode(entry Entry, left *Node, right *Node) *Node {
+	return &Node{
+		Entry:    entry,
+		h:        combinedDepth(left, right),
+		children: [2]*Node{left, right},
 	}
-	nn.balance = 0
 }
 
 func (node *Node) Get(key Key) (value Value, ok bool) {
@@ -93,103 +65,87 @@ func (node *Node) Get(key Key) (value Value, ok bool) {
 }
 
 func (node *Node) Insert(key Key, value Value) *Node {
-	entry := Entry{key, value}
-	var step func(*Node) (*Node, bool)
-	step = func(node *Node) (*Node, bool) {
-		if node == nil {
-			return &Node{Entry: entry}, false
-		}
-		node = node.dup()
-		if node.Entry.Key.Eq(key) {
-			node.Entry = Entry{key, value}
-			return node, true
-		}
-		dir := 0
-		if node.Entry.Key.Less(key) {
-			dir = 1
-		}
-		var done bool
-		node.children[dir], done = step(node.children[dir])
-		if done {
-			return node, true
-		}
-		node.balance += int8(2*dir - 1)
-		switch node.balance {
-		case 0:
-			return node, true
-		case 1, -1:
-			return node, false
-		}
-		n := node.children[dir].dup()
-		node.children[dir] = n
-		bal := 2*dir - 1
-		if n.balance == int8(bal) {
-			node.balance = 0
-			n.balance = 0
-			return node.singleRot(1 - dir), true
-		}
-		node.adjustBalance(dir, int8(bal))
-		return node.doubleRot(1 - dir), true
+	if node == nil {
+		return mkNode(Entry{key, value}, nil, nil)
 	}
-	tree, _ := step(node)
-	return tree
+	entry := node.Entry
+	left := node.children[0]
+	right := node.children[1]
+	if node.Entry.Key.Less(key) {
+		right = right.Insert(key, value)
+	} else if key.Less(node.Entry.Key) {
+		left = left.Insert(key, value)
+	} else { // equals
+		entry = Entry{key, value}
+	}
+	return rotate(entry, left, right)
 }
 
 func (node *Node) Remove(key Key) *Node {
-	var step func(*Node) (*Node, bool)
-	step = func(node *Node) (*Node, bool) {
-		if node == nil {
-			return nil, false
-		}
-		node = node.dup()
-		if node.Entry.Key.Eq(key) {
-			switch {
-			case node.children[0] == nil:
-				return node.children[1], false
-			case node.children[1] == nil:
-				return node.children[0], false
-			}
-			heir := node.children[0]
-			for heir.children[1] != nil {
-				heir = heir.children[1]
-			}
-			node.Entry = heir.Entry
-			key = heir.Entry.Key
-		}
-		dir := 0
-		if node.Entry.Key.Less(key) {
-			dir = 1
-		}
-		var done bool
-		node.children[dir], done = step(node.children[dir])
-		if done {
-			return node, true
-		}
-		node.balance += int8(1 - 2*dir)
-		switch node.balance {
-		case 1, -1:
-			return node, true
-		case 0:
-			return node, false
-		}
-		n := node.children[1-dir].dup()
-		node.children[1-dir] = n
-		bal := 2*dir - 1
-		switch int(n.balance) {
-		case -bal:
-			node.balance = 0
-			n.balance = 0
-			return node.singleRot(dir), false
-		case bal:
-			node.adjustBalance(1-dir, int8(-bal))
-			return node.doubleRot(dir), false
-		}
-		node.balance = int8(-bal)
-		n.balance = int8(bal)
-		return node.singleRot(dir), true
+	if node == nil {
+		return nil
 	}
-	tree, _ := step(node)
-	return tree
+	entry := node.Entry
+	left := node.children[0]
+	right := node.children[1]
+	if node.Entry.Key.Less(key) {
+		right = right.Remove(key)
+	} else if key.Less(node.Entry.Key) {
+		left = left.Remove(key)
+	} else { // equals
+		max := node.children[0].Max()
+		if max == nil {
+			return node.children[1]
+		} else {
+			left = left.Remove(max.Key)
+			entry = *max
+		}
+	}
+	return rotate(entry, left, right)
+}
+
+func rotate(entry Entry, left *Node, right *Node) *Node {
+	if right.Height()-left.Height() > 1 { // implies right != nil
+		// single left
+		rl := right.children[0]
+		rr := right.children[1]
+		if combinedDepth(left, rl)-rr.Height() > 1 {
+			// double rotation
+			rll := rl.children[0]
+			rlr := rl.children[1]
+			return mkNode(
+				rl.Entry,
+				mkNode(entry, left, rll),
+				mkNode(right.Entry, rlr, rr),
+			)
+		}
+		return mkNode(
+			right.Entry,
+			mkNode(entry, left, rl),
+			rr,
+		)
+	}
+	if left.Height()-right.Height() > 1 { // implies left != nil
+		// single right
+		ll := left.children[0]
+		lr := left.children[1]
+		if combinedDepth(right, lr)-ll.Height() > 1 {
+			// double rotation
+			lrl := lr.children[0]
+			lrr := lr.children[1]
+			return mkNode(
+				lr.Entry,
+				mkNode(left.Entry, ll, lrl),
+				mkNode(entry, lrr, right),
+			)
+		}
+		return mkNode(
+			left.Entry,
+			ll,
+			mkNode(entry, lr, right),
+		)
+	}
+	return mkNode(entry, left, right)
 }
 
 func (node *Node) Len() int {
