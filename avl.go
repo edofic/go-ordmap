@@ -2,12 +2,6 @@ package ordmap
 
 import "fmt"
 
-type Key interface {
-	Less(Key) bool
-}
-
-type Value interface{}
-
 type Entry struct {
 	Key   Key
 	Value Value
