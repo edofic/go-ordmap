@@ -101,6 +101,7 @@ func (m *TreeModel) Insert(value int) {
 	validateHeight(m.t, m.tree)
 	validateOrdered(m.t, m.tree)
 	require.Equal(m.t, m.elems, m.tree.Entries())
+	require.Equal(m.t, len(m.elems), m.tree.Len())
 }
 
 func (m *TreeModel) InsertAll(values ...int) {

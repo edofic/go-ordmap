@@ -8,6 +8,7 @@ type Entry struct {
 type OrdMap struct {
 	Entry    Entry
 	h        int
+	len      int
 	children [2]*OrdMap
 }
 
@@ -33,9 +34,17 @@ func combinedDepth_OrdMap(n1, n2 *OrdMap) int {
 
 // suffix _OrdMap is needed because this will get specialised in codegen
 func mk_OrdMap(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
+	len := 1
+	if left != nil {
+		len += left.len
+	}
+	if right != nil {
+		len += right.len
+	}
 	return &OrdMap{
 		Entry:    entry,
 		h:        combinedDepth_OrdMap(left, right),
+		len:      len,
 		children: [2]*OrdMap{left, right},
 	}
 }
@@ -128,7 +137,7 @@ func (node *OrdMap) Len() int {
 	if node == nil {
 		return 0
 	}
-	return 1 + node.children[0].Len() + node.children[1].Len()
+	return node.len
 }
 
 func (node *OrdMap) Entries() []Entry {
