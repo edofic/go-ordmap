@@ -169,11 +169,11 @@ func (node *Node) Max() *Entry {
 	return node.extreme(1)
 }
 
-func (node *Node) Iterator() *Iterator {
+func (node *Node) Iterator() Iterator {
 	return newIterator(node, 0)
 }
 
-func (node *Node) IteratorReverse() *Iterator {
+func (node *Node) IteratorReverse() Iterator {
 	return newIterator(node, 1)
 }
 
@@ -184,15 +184,14 @@ type iteratorStackFrame struct {
 
 type Iterator struct {
 	direction    int
-	stack        []*iteratorStackFrame
+	stack        []iteratorStackFrame
 	currentEntry Entry
 }
 
-func newIterator(node *Node, direction int) *Iterator {
-	iter := &Iterator{
-		direction: direction,
-		stack:     []*iteratorStackFrame{{node: node, state: 0}},
-	}
+func newIterator(node *Node, direction int) Iterator {
+	stack := make([]iteratorStackFrame, 1, node.Height())
+	stack[0] = iteratorStackFrame{node: node, state: 0}
+	iter := Iterator{direction: direction, stack: stack}
 	iter.Next()
 	return iter
 }
@@ -211,7 +210,7 @@ func (i *Iterator) Value() Value {
 
 func (i *Iterator) Next() {
 	for len(i.stack) > 0 {
-		frame := i.stack[len(i.stack)-1]
+		frame := &i.stack[len(i.stack)-1]
 		switch frame.state {
 		case 0:
 			if frame.node == nil {
@@ -220,7 +219,7 @@ func (i *Iterator) Next() {
 				frame.state = 1
 			}
 		case 1:
-			i.stack = append(i.stack, &iteratorStackFrame{node: frame.node.children[i.direction], state: 0})
+			i.stack = append(i.stack, iteratorStackFrame{node: frame.node.children[i.direction], state: 0})
 			frame.state = 2
 		case 2:
 			i.currentEntry = frame.node.Entry
@@ -228,7 +227,7 @@ func (i *Iterator) Next() {
 			return
 		case 3:
 			// override frame - tail call optimisation
-			i.stack[len(i.stack)-1] = &iteratorStackFrame{node: frame.node.children[1-i.direction], state: 0}
+			i.stack[len(i.stack)-1] = iteratorStackFrame{node: frame.node.children[1-i.direction], state: 0}
 		default:
 			panic(fmt.Sprintf("Unknown state %v", frame.state))
 		}
