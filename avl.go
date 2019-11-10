@@ -103,19 +103,13 @@ func rotate(entry Entry, left *Node, right *Node) *Node {
 		rr := right.children[1]
 		if combinedDepth(left, rl)-rr.Height() > 1 {
 			// double rotation
-			rll := rl.children[0]
-			rlr := rl.children[1]
 			return mkNode(
 				rl.Entry,
-				mkNode(entry, left, rll),
-				mkNode(right.Entry, rlr, rr),
+				mkNode(entry, left, rl.children[0]),
+				mkNode(right.Entry, rl.children[1], rr),
 			)
 		}
-		return mkNode(
-			right.Entry,
-			mkNode(entry, left, rl),
-			rr,
-		)
+		return mkNode(right.Entry, mkNode(entry, left, rl), rr)
 	}
 	if left.Height()-right.Height() > 1 { // implies left != nil
 		// single right
@@ -123,19 +117,13 @@ func rotate(entry Entry, left *Node, right *Node) *Node {
 		lr := left.children[1]
 		if combinedDepth(right, lr)-ll.Height() > 1 {
 			// double rotation
-			lrl := lr.children[0]
-			lrr := lr.children[1]
 			return mkNode(
 				lr.Entry,
-				mkNode(left.Entry, ll, lrl),
-				mkNode(entry, lrr, right),
+				mkNode(left.Entry, ll, lr.children[0]),
+				mkNode(entry, lr.children[1], right),
 			)
 		}
-		return mkNode(
-			left.Entry,
-			ll,
-			mkNode(entry, lr, right),
-		)
+		return mkNode(left.Entry, ll, mkNode(entry, lr, right))
 	}
 	return mkNode(entry, left, right)
 }
