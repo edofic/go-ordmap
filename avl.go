@@ -214,7 +214,9 @@ func (i *Iterator) Next() {
 		switch frame.state {
 		case 0:
 			if frame.node == nil {
-				i.stack = i.stack[:len(i.stack)-1] // pop
+				last := len(i.stack) - 1
+				i.stack[last] = iteratorStackFrame{} // zero out
+				i.stack = i.stack[:last]             // pop
 			} else {
 				frame.state = 1
 			}
