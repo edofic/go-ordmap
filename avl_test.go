@@ -34,7 +34,7 @@ func validateHeight(t *testing.T, tree *OrdMap) {
 	left := tree.children[0].Height()
 	right := tree.children[1].Height()
 	require.Contains(t, []int{-1, 0, 1}, right-left)
-	require.Equal(t, combinedDepth(tree.children[0], tree.children[1]), tree.h)
+	require.Equal(t, combinedDepth_OrdMap(tree.children[0], tree.children[1]), tree.h)
 	validateHeight(t, tree.children[0])
 	validateHeight(t, tree.children[1])
 }

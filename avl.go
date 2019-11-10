@@ -20,7 +20,8 @@ func (n *OrdMap) Height() int {
 	return n.h
 }
 
-func combinedDepth(n1, n2 *OrdMap) int {
+// suffix _OrdMap is needed because this will get specialised in codegen
+func combinedDepth_OrdMap(n1, n2 *OrdMap) int {
 	d1 := n1.Height()
 	d2 := n2.Height()
 	var d int
@@ -32,10 +33,11 @@ func combinedDepth(n1, n2 *OrdMap) int {
 	return d + 1
 }
 
-func mkNode(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
+// suffix _OrdMap is needed because this will get specialised in codegen
+func mk_OrdMap(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
 	return &OrdMap{
 		Entry:    entry,
-		h:        combinedDepth(left, right),
+		h:        combinedDepth_OrdMap(left, right),
 		children: [2]*OrdMap{left, right},
 	}
 }
@@ -57,7 +59,7 @@ func (node *OrdMap) Get(key Key) (value Value, ok bool) {
 
 func (node *OrdMap) Insert(key Key, value Value) *OrdMap {
 	if node == nil {
-		return mkNode(Entry{key, value}, nil, nil)
+		return mk_OrdMap(Entry{key, value}, nil, nil)
 	}
 	entry, left, right := node.Entry, node.children[0], node.children[1]
 	if node.Entry.Key.Less(key) {
@@ -67,7 +69,7 @@ func (node *OrdMap) Insert(key Key, value Value) *OrdMap {
 	} else { // equals
 		entry = Entry{key, value}
 	}
-	return rotate(entry, left, right)
+	return rotate_OrdMap(entry, left, right)
 }
 
 func (node *OrdMap) Remove(key Key) *OrdMap {
@@ -88,39 +90,40 @@ func (node *OrdMap) Remove(key Key) *OrdMap {
 			entry = *max
 		}
 	}
-	return rotate(entry, left, right)
+	return rotate_OrdMap(entry, left, right)
 }
 
-func rotate(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
+// suffix _OrdMap is needed because this will get specialised in codegen
+func rotate_OrdMap(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
 	if right.Height()-left.Height() > 1 { // implies right != nil
 		// single left
 		rl := right.children[0]
 		rr := right.children[1]
-		if combinedDepth(left, rl)-rr.Height() > 1 {
+		if combinedDepth_OrdMap(left, rl)-rr.Height() > 1 {
 			// double rotation
-			return mkNode(
+			return mk_OrdMap(
 				rl.Entry,
-				mkNode(entry, left, rl.children[0]),
-				mkNode(right.Entry, rl.children[1], rr),
+				mk_OrdMap(entry, left, rl.children[0]),
+				mk_OrdMap(right.Entry, rl.children[1], rr),
 			)
 		}
-		return mkNode(right.Entry, mkNode(entry, left, rl), rr)
+		return mk_OrdMap(right.Entry, mk_OrdMap(entry, left, rl), rr)
 	}
 	if left.Height()-right.Height() > 1 { // implies left != nil
 		// single right
 		ll := left.children[0]
 		lr := left.children[1]
-		if combinedDepth(right, lr)-ll.Height() > 1 {
+		if combinedDepth_OrdMap(right, lr)-ll.Height() > 1 {
 			// double rotation
-			return mkNode(
+			return mk_OrdMap(
 				lr.Entry,
-				mkNode(left.Entry, ll, lr.children[0]),
-				mkNode(entry, lr.children[1], right),
+				mk_OrdMap(left.Entry, ll, lr.children[0]),
+				mk_OrdMap(entry, lr.children[1], right),
 			)
 		}
-		return mkNode(left.Entry, ll, mkNode(entry, lr, right))
+		return mk_OrdMap(left.Entry, ll, mk_OrdMap(entry, lr, right))
 	}
-	return mkNode(entry, left, right)
+	return mk_OrdMap(entry, left, right)
 }
 
 func (node *OrdMap) Len() int {
@@ -165,11 +168,11 @@ func (node *OrdMap) Max() *Entry {
 }
 
 func (node *OrdMap) Iterate() Iterator {
-	return newIterator(node, 0)
+	return newIterator_OrdMap(node, 0)
 }
 
 func (node *OrdMap) IterateReverse() Iterator {
-	return newIterator(node, 1)
+	return newIterator_OrdMap(node, 1)
 }
 
 type iteratorStackFrame struct {
@@ -183,7 +186,8 @@ type Iterator struct {
 	currentEntry Entry
 }
 
-func newIterator(node *OrdMap, direction int) Iterator {
+// suffix _OrdMap is needed because this will get specialised in codegen
+func newIterator_OrdMap(node *OrdMap, direction int) Iterator {
 	stack := make([]iteratorStackFrame, 1, node.Height())
 	stack[0] = iteratorStackFrame{node: node, state: 0}
 	iter := Iterator{direction: direction, stack: stack}

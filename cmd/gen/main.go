@@ -20,9 +20,10 @@ func main() {
 	replace(&template, `package ordmap`, "package "+(*pkg))
 	replace(&template, `\bKey\b`, *key)
 	replace(&template, `\bValue\b`, *value)
-	replace(&template, `\bOrdMap\b`, *name)
+	replace(&template, `(?:\b|_)OrdMap\b`, *name)
 	replace(&template, `\bEntry\b`, (*name)+"Entry")
 	replace(&template, `\bIterator\b`, (*name)+"Iterator")
+	replace(&template, `\biteratorStackFrame\b`, (*name)+"IteratorStackFrame")
 
 	err := ioutil.WriteFile(*target, []byte(template), 0644)
 	if err != nil {
