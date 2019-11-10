@@ -64,9 +64,7 @@ func (node *Node) Insert(key Key, value Value) *Node {
 	if node == nil {
 		return mkNode(Entry{key, value}, nil, nil)
 	}
-	entry := node.Entry
-	left := node.children[0]
-	right := node.children[1]
+	entry, left, right := node.Entry, node.children[0], node.children[1]
 	if node.Entry.Key.Less(key) {
 		right = right.Insert(key, value)
 	} else if key.Less(node.Entry.Key) {
@@ -81,17 +79,15 @@ func (node *Node) Remove(key Key) *Node {
 	if node == nil {
 		return nil
 	}
-	entry := node.Entry
-	left := node.children[0]
-	right := node.children[1]
+	entry, left, right := node.Entry, node.children[0], node.children[1]
 	if node.Entry.Key.Less(key) {
 		right = right.Remove(key)
 	} else if key.Less(node.Entry.Key) {
 		left = left.Remove(key)
 	} else { // equals
-		max := node.children[0].Max()
+		max := left.Max()
 		if max == nil {
-			return node.children[1]
+			return right
 		} else {
 			left = left.Remove(max.Key)
 			entry = *max
