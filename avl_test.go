@@ -17,7 +17,7 @@ type intKey int
 
 func (k intKey) Less(k2 Key) bool { return k < k2.(intKey) }
 
-func reprTree(n *Node) string {
+func reprTree(n *OrdMap) string {
 	if n == nil {
 		return "_"
 	}
@@ -27,7 +27,7 @@ func reprTree(n *Node) string {
 	return fmt.Sprintf("[%v %v %v]", reprTree(n.children[0]), n.Entry.Key, reprTree(n.children[1]))
 }
 
-func validateHeight(t *testing.T, tree *Node) {
+func validateHeight(t *testing.T, tree *OrdMap) {
 	if tree == nil {
 		return // empty is balanced
 	}
@@ -39,7 +39,7 @@ func validateHeight(t *testing.T, tree *Node) {
 	validateHeight(t, tree.children[1])
 }
 
-func validateOrdered(t *testing.T, tree *Node) {
+func validateOrdered(t *testing.T, tree *OrdMap) {
 	if tree == nil {
 		return
 	}
@@ -59,7 +59,7 @@ func validateOrdered(t *testing.T, tree *Node) {
 type TreeModel struct {
 	t     *testing.T
 	elems []Entry
-	tree  *Node
+	tree  *OrdMap
 	debug bool
 }
 
@@ -160,7 +160,7 @@ func TestModel(t *testing.T) {
 func TestModelRandom(t *testing.T) {
 	N := 100
 	model := NewTreeModel(t)
-	samples := make(map[int]*Node)
+	samples := make(map[int]*OrdMap)
 	sizes := make(map[int]int)
 	for i := 0; i < N; i++ {
 		if rand.Float64() < 0.7 { // skewed so the tree can grow
@@ -179,7 +179,7 @@ func TestModelRandom(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	var tree *Node
+	var tree *OrdMap
 	tree = tree.Insert(intKey(1), "foo")
 	tree = tree.Insert(intKey(2), "bar")
 	tree = tree.Insert(intKey(0), "bar")
@@ -198,7 +198,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestMinMax(t *testing.T) {
-	var tree *Node
+	var tree *OrdMap
 	require.Nil(t, tree.Min())
 	require.Nil(t, tree.Max())
 
@@ -211,7 +211,7 @@ func TestMinMax(t *testing.T) {
 }
 
 func TestRemoveMissing(t *testing.T) {
-	var tree *Node
+	var tree *OrdMap
 	tree = tree.Insert(intKey(1), "foo")
 	tree = tree.Insert(intKey(2), "bar")
 	require.Equal(t, 2, tree.Len())
@@ -220,7 +220,7 @@ func TestRemoveMissing(t *testing.T) {
 }
 
 func TestIterator(t *testing.T) {
-	var tree *Node
+	var tree *OrdMap
 	N := 100
 	for i := 0; i < N; i++ {
 		tree = tree.Insert(intKey(i), i)
@@ -239,7 +239,7 @@ func TestIterator(t *testing.T) {
 }
 
 func TestIteratorReverse(t *testing.T) {
-	var tree *Node
+	var tree *OrdMap
 	N := 100
 	for i := 0; i < N; i++ {
 		tree = tree.Insert(intKey(i), i)
@@ -276,7 +276,7 @@ func BenchmarkMap(b *testing.B) {
 func BenchmarkTree(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
-			var tree *Node
+			var tree *OrdMap
 			for i := 0; i < M; i++ {
 				tree = tree.Insert(intKey(i), i)
 			}

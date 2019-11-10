@@ -13,20 +13,20 @@ type Entry struct {
 	Value Value
 }
 
-type Node struct {
+type OrdMap struct {
 	Entry    Entry
 	h        int
-	children [2]*Node
+	children [2]*OrdMap
 }
 
-func (n *Node) Height() int {
+func (n *OrdMap) Height() int {
 	if n == nil {
 		return 0
 	}
 	return n.h
 }
 
-func combinedDepth(n1, n2 *Node) int {
+func combinedDepth(n1, n2 *OrdMap) int {
 	d1 := n1.Height()
 	d2 := n2.Height()
 	var d int
@@ -38,15 +38,15 @@ func combinedDepth(n1, n2 *Node) int {
 	return d + 1
 }
 
-func mkNode(entry Entry, left *Node, right *Node) *Node {
-	return &Node{
+func mkNode(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
+	return &OrdMap{
 		Entry:    entry,
 		h:        combinedDepth(left, right),
-		children: [2]*Node{left, right},
+		children: [2]*OrdMap{left, right},
 	}
 }
 
-func (node *Node) Get(key Key) (value Value, ok bool) {
+func (node *OrdMap) Get(key Key) (value Value, ok bool) {
 	if node == nil {
 		return nil, false
 	}
@@ -60,7 +60,7 @@ func (node *Node) Get(key Key) (value Value, ok bool) {
 	return node.Entry.Value, true
 }
 
-func (node *Node) Insert(key Key, value Value) *Node {
+func (node *OrdMap) Insert(key Key, value Value) *OrdMap {
 	if node == nil {
 		return mkNode(Entry{key, value}, nil, nil)
 	}
@@ -75,7 +75,7 @@ func (node *Node) Insert(key Key, value Value) *Node {
 	return rotate(entry, left, right)
 }
 
-func (node *Node) Remove(key Key) *Node {
+func (node *OrdMap) Remove(key Key) *OrdMap {
 	if node == nil {
 		return nil
 	}
@@ -96,7 +96,7 @@ func (node *Node) Remove(key Key) *Node {
 	return rotate(entry, left, right)
 }
 
-func rotate(entry Entry, left *Node, right *Node) *Node {
+func rotate(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
 	if right.Height()-left.Height() > 1 { // implies right != nil
 		// single left
 		rl := right.children[0]
@@ -128,17 +128,17 @@ func rotate(entry Entry, left *Node, right *Node) *Node {
 	return mkNode(entry, left, right)
 }
 
-func (node *Node) Len() int {
+func (node *OrdMap) Len() int {
 	if node == nil {
 		return 0
 	}
 	return 1 + node.children[0].Len() + node.children[1].Len()
 }
 
-func (node *Node) Entries() []Entry {
+func (node *OrdMap) Entries() []Entry {
 	elems := make([]Entry, 0)
-	var step func(n *Node)
-	step = func(n *Node) {
+	var step func(n *OrdMap)
+	step = func(n *OrdMap) {
 		if n == nil {
 			return
 		}
@@ -150,7 +150,7 @@ func (node *Node) Entries() []Entry {
 	return elems
 }
 
-func (node *Node) extreme(dir int) *Entry {
+func (node *OrdMap) extreme(dir int) *Entry {
 	if node == nil {
 		return nil
 	}
@@ -161,24 +161,24 @@ func (node *Node) extreme(dir int) *Entry {
 	return &node.Entry
 }
 
-func (node *Node) Min() *Entry {
+func (node *OrdMap) Min() *Entry {
 	return node.extreme(0)
 }
 
-func (node *Node) Max() *Entry {
+func (node *OrdMap) Max() *Entry {
 	return node.extreme(1)
 }
 
-func (node *Node) Iterator() Iterator {
+func (node *OrdMap) Iterator() Iterator {
 	return newIterator(node, 0)
 }
 
-func (node *Node) IteratorReverse() Iterator {
+func (node *OrdMap) IteratorReverse() Iterator {
 	return newIterator(node, 1)
 }
 
 type iteratorStackFrame struct {
-	node  *Node
+	node  *OrdMap
 	state int8
 }
 
@@ -188,7 +188,7 @@ type Iterator struct {
 	currentEntry Entry
 }
 
-func newIterator(node *Node, direction int) Iterator {
+func newIterator(node *OrdMap, direction int) Iterator {
 	stack := make([]iteratorStackFrame, 1, node.Height())
 	stack[0] = iteratorStackFrame{node: node, state: 0}
 	iter := Iterator{direction: direction, stack: stack}
