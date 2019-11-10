@@ -154,11 +154,11 @@ func (node *OrdMap) extreme(dir int) *Entry {
 	if node == nil {
 		return nil
 	}
-	child := node.children[dir]
-	if child != nil {
-		return child.extreme(dir)
+	finger := node
+	for finger.children[dir] != nil {
+		finger = finger.children[dir]
 	}
-	return &node.Entry
+	return &finger.Entry
 }
 
 func (node *OrdMap) Min() *Entry {
