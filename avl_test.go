@@ -232,8 +232,8 @@ func TestIterator(t *testing.T) {
 	}
 
 	valuesFromIterator := make([]int, 0, N)
-	for iter := tree.Iterator(); !iter.Done(); iter.Next() {
-		valuesFromIterator = append(valuesFromIterator, iter.Value().(int))
+	for iter := tree.Iterate(); !iter.Done(); iter.Next() {
+		valuesFromIterator = append(valuesFromIterator, iter.GetValue().(int))
 	}
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
 }
@@ -251,8 +251,8 @@ func TestIteratorReverse(t *testing.T) {
 	}
 
 	valuesFromIterator := make([]int, 0, N)
-	for iter := tree.IteratorReverse(); !iter.Done(); iter.Next() {
-		valuesFromIterator = append(valuesFromIterator, iter.Value().(int))
+	for iter := tree.IterateReverse(); !iter.Done(); iter.Next() {
+		valuesFromIterator = append(valuesFromIterator, iter.GetValue().(int))
 	}
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
 }
@@ -296,7 +296,7 @@ func BenchmarkTree(b *testing.B) {
 			b.Run("Iterator", func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					for iter := tree.Iterator(); !iter.Done(); iter.Next() {
+					for iter := tree.Iterate(); !iter.Done(); iter.Next() {
 						// no-op, just consume
 					}
 				}
@@ -305,7 +305,7 @@ func BenchmarkTree(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
 					count := 0
-					for iter := tree.Iterator(); !iter.Done() && count < 5; iter.Next() {
+					for iter := tree.Iterate(); !iter.Done() && count < 5; iter.Next() {
 						count += 1
 					}
 				}

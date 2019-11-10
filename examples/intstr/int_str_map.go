@@ -1,26 +1,26 @@
-package ordmap
+package main
 
 import "fmt"
 
-type Entry struct {
-	Key   Key
-	Value Value
+type IntStrMapEntry struct {
+	intKey   intKey
+	string string
 }
 
-type OrdMap struct {
-	Entry    Entry
+type IntStrMap struct {
+	IntStrMapEntry    IntStrMapEntry
 	h        int
-	children [2]*OrdMap
+	children [2]*IntStrMap
 }
 
-func (n *OrdMap) Height() int {
+func (n *IntStrMap) Height() int {
 	if n == nil {
 		return 0
 	}
 	return n.h
 }
 
-func combinedDepth(n1, n2 *OrdMap) int {
+func combinedDepth(n1, n2 *IntStrMap) int {
 	d1 := n1.Height()
 	d2 := n2.Height()
 	var d int
@@ -32,66 +32,66 @@ func combinedDepth(n1, n2 *OrdMap) int {
 	return d + 1
 }
 
-func mkNode(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
-	return &OrdMap{
-		Entry:    entry,
+func mkNode(entry IntStrMapEntry, left *IntStrMap, right *IntStrMap) *IntStrMap {
+	return &IntStrMap{
+		IntStrMapEntry:    entry,
 		h:        combinedDepth(left, right),
-		children: [2]*OrdMap{left, right},
+		children: [2]*IntStrMap{left, right},
 	}
 }
 
-func (node *OrdMap) Get(key Key) (value Value, ok bool) {
+func (node *IntStrMap) Get(key intKey) (value string, ok bool) {
 	if node == nil {
 		ok = false
 		return // using named returns so we keep the zero value for `value`
 	}
-	if key.Less(node.Entry.Key) {
+	if key.Less(node.IntStrMapEntry.intKey) {
 		return node.children[0].Get(key)
 	}
-	if node.Entry.Key.Less(key) {
+	if node.IntStrMapEntry.intKey.Less(key) {
 		return node.children[1].Get(key)
 	}
 	// equal
-	return node.Entry.Value, true
+	return node.IntStrMapEntry.string, true
 }
 
-func (node *OrdMap) Insert(key Key, value Value) *OrdMap {
+func (node *IntStrMap) Insert(key intKey, value string) *IntStrMap {
 	if node == nil {
-		return mkNode(Entry{key, value}, nil, nil)
+		return mkNode(IntStrMapEntry{key, value}, nil, nil)
 	}
-	entry, left, right := node.Entry, node.children[0], node.children[1]
-	if node.Entry.Key.Less(key) {
+	entry, left, right := node.IntStrMapEntry, node.children[0], node.children[1]
+	if node.IntStrMapEntry.intKey.Less(key) {
 		right = right.Insert(key, value)
-	} else if key.Less(node.Entry.Key) {
+	} else if key.Less(node.IntStrMapEntry.intKey) {
 		left = left.Insert(key, value)
 	} else { // equals
-		entry = Entry{key, value}
+		entry = IntStrMapEntry{key, value}
 	}
 	return rotate(entry, left, right)
 }
 
-func (node *OrdMap) Remove(key Key) *OrdMap {
+func (node *IntStrMap) Remove(key intKey) *IntStrMap {
 	if node == nil {
 		return nil
 	}
-	entry, left, right := node.Entry, node.children[0], node.children[1]
-	if node.Entry.Key.Less(key) {
+	entry, left, right := node.IntStrMapEntry, node.children[0], node.children[1]
+	if node.IntStrMapEntry.intKey.Less(key) {
 		right = right.Remove(key)
-	} else if key.Less(node.Entry.Key) {
+	} else if key.Less(node.IntStrMapEntry.intKey) {
 		left = left.Remove(key)
 	} else { // equals
 		max := left.Max()
 		if max == nil {
 			return right
 		} else {
-			left = left.Remove(max.Key)
+			left = left.Remove(max.intKey)
 			entry = *max
 		}
 	}
 	return rotate(entry, left, right)
 }
 
-func rotate(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
+func rotate(entry IntStrMapEntry, left *IntStrMap, right *IntStrMap) *IntStrMap {
 	if right.Height()-left.Height() > 1 { // implies right != nil
 		// single left
 		rl := right.children[0]
@@ -99,12 +99,12 @@ func rotate(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
 		if combinedDepth(left, rl)-rr.Height() > 1 {
 			// double rotation
 			return mkNode(
-				rl.Entry,
+				rl.IntStrMapEntry,
 				mkNode(entry, left, rl.children[0]),
-				mkNode(right.Entry, rl.children[1], rr),
+				mkNode(right.IntStrMapEntry, rl.children[1], rr),
 			)
 		}
-		return mkNode(right.Entry, mkNode(entry, left, rl), rr)
+		return mkNode(right.IntStrMapEntry, mkNode(entry, left, rl), rr)
 	}
 	if left.Height()-right.Height() > 1 { // implies left != nil
 		// single right
@@ -113,39 +113,39 @@ func rotate(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
 		if combinedDepth(right, lr)-ll.Height() > 1 {
 			// double rotation
 			return mkNode(
-				lr.Entry,
-				mkNode(left.Entry, ll, lr.children[0]),
+				lr.IntStrMapEntry,
+				mkNode(left.IntStrMapEntry, ll, lr.children[0]),
 				mkNode(entry, lr.children[1], right),
 			)
 		}
-		return mkNode(left.Entry, ll, mkNode(entry, lr, right))
+		return mkNode(left.IntStrMapEntry, ll, mkNode(entry, lr, right))
 	}
 	return mkNode(entry, left, right)
 }
 
-func (node *OrdMap) Len() int {
+func (node *IntStrMap) Len() int {
 	if node == nil {
 		return 0
 	}
 	return 1 + node.children[0].Len() + node.children[1].Len()
 }
 
-func (node *OrdMap) Entries() []Entry {
-	elems := make([]Entry, 0)
-	var step func(n *OrdMap)
-	step = func(n *OrdMap) {
+func (node *IntStrMap) Entries() []IntStrMapEntry {
+	elems := make([]IntStrMapEntry, 0)
+	var step func(n *IntStrMap)
+	step = func(n *IntStrMap) {
 		if n == nil {
 			return
 		}
 		step(n.children[0])
-		elems = append(elems, n.Entry)
+		elems = append(elems, n.IntStrMapEntry)
 		step(n.children[1])
 	}
 	step(node)
 	return elems
 }
 
-func (node *OrdMap) extreme(dir int) *Entry {
+func (node *IntStrMap) extreme(dir int) *IntStrMapEntry {
 	if node == nil {
 		return nil
 	}
@@ -153,57 +153,57 @@ func (node *OrdMap) extreme(dir int) *Entry {
 	for finger.children[dir] != nil {
 		finger = finger.children[dir]
 	}
-	return &finger.Entry
+	return &finger.IntStrMapEntry
 }
 
-func (node *OrdMap) Min() *Entry {
+func (node *IntStrMap) Min() *IntStrMapEntry {
 	return node.extreme(0)
 }
 
-func (node *OrdMap) Max() *Entry {
+func (node *IntStrMap) Max() *IntStrMapEntry {
 	return node.extreme(1)
 }
 
-func (node *OrdMap) Iterate() Iterator {
+func (node *IntStrMap) Iterate() IntStrMapIterator {
 	return newIterator(node, 0)
 }
 
-func (node *OrdMap) IterateReverse() Iterator {
+func (node *IntStrMap) IterateReverse() IntStrMapIterator {
 	return newIterator(node, 1)
 }
 
 type iteratorStackFrame struct {
-	node  *OrdMap
+	node  *IntStrMap
 	state int8
 }
 
-type Iterator struct {
+type IntStrMapIterator struct {
 	direction    int
 	stack        []iteratorStackFrame
-	currentEntry Entry
+	currentEntry IntStrMapEntry
 }
 
-func newIterator(node *OrdMap, direction int) Iterator {
+func newIterator(node *IntStrMap, direction int) IntStrMapIterator {
 	stack := make([]iteratorStackFrame, 1, node.Height())
 	stack[0] = iteratorStackFrame{node: node, state: 0}
-	iter := Iterator{direction: direction, stack: stack}
+	iter := IntStrMapIterator{direction: direction, stack: stack}
 	iter.Next()
 	return iter
 }
 
-func (i *Iterator) Done() bool {
+func (i *IntStrMapIterator) Done() bool {
 	return len(i.stack) == 0
 }
 
-func (i *Iterator) GetKey() Key {
-	return i.currentEntry.Key
+func (i *IntStrMapIterator) GetKey() intKey {
+	return i.currentEntry.intKey
 }
 
-func (i *Iterator) GetValue() Value {
-	return i.currentEntry.Value
+func (i *IntStrMapIterator) GetValue() string {
+	return i.currentEntry.string
 }
 
-func (i *Iterator) Next() {
+func (i *IntStrMapIterator) Next() {
 	for len(i.stack) > 0 {
 		frame := &i.stack[len(i.stack)-1]
 		switch frame.state {
@@ -219,7 +219,7 @@ func (i *Iterator) Next() {
 			i.stack = append(i.stack, iteratorStackFrame{node: frame.node.children[i.direction], state: 0})
 			frame.state = 2
 		case 2:
-			i.currentEntry = frame.node.Entry
+			i.currentEntry = frame.node.IntStrMapEntry
 			frame.state = 3
 			return
 		case 3:
