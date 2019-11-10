@@ -265,7 +265,6 @@ func BenchmarkMap(b *testing.B) {
 				m[intKey(i)] = i
 			}
 			b.ReportAllocs()
-			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				m[intKey(M+1)] = M + 1
 				delete(m, intKey(M+1))
@@ -281,12 +280,36 @@ func BenchmarkTree(b *testing.B) {
 			for i := 0; i < M; i++ {
 				tree = tree.Insert(intKey(i), i)
 			}
-			b.ReportAllocs()
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				tree = tree.Insert(intKey(M+1), M+1)
-				tree = tree.Remove(intKey(M + 1))
-			}
+			b.Run("InsertRemove", func(b *testing.B) {
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					tree1 := tree.Insert(intKey(M+1), M+1)
+					_ = tree1.Remove(intKey(M + 1))
+				}
+			})
+			b.Run("Entries", func(b *testing.B) {
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					tree.Entries()
+				}
+			})
+			b.Run("Iterator", func(b *testing.B) {
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					for iter := tree.Iterator(); !iter.Done(); iter.Next() {
+						// no-op, just consume
+					}
+				}
+			})
+			b.Run("Iterator5", func(b *testing.B) {
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					count := 0
+					for iter := tree.Iterator(); !iter.Done() && count < 5; iter.Next() {
+						count += 1
+					}
+				}
+			})
 		})
 	}
 }
