@@ -19,10 +19,6 @@ type Node struct {
 	children [2]*Node
 }
 
-func (n Node) dup() *Node {
-	return &n
-}
-
 func (n *Node) Height() int {
 	if n == nil {
 		return 0
