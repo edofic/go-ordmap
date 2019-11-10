@@ -1,7 +1,5 @@
 package main
 
-import "fmt"
-
 type IntIntMapEntry struct {
 	intKey   intKey
 	int int
@@ -229,8 +227,6 @@ func (i *IntIntMapIterator) Next() {
 		case 3:
 			// override frame - tail call optimisation
 			i.stack[len(i.stack)-1] = IntIntMapIteratorStackFrame{node: frame.node.children[1-i.direction], state: 0}
-		default:
-			panic(fmt.Sprintf("Unknown state %v", frame.state))
 		}
 
 	}
