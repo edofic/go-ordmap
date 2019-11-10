@@ -4,7 +4,6 @@ import "fmt"
 
 type Key interface {
 	Less(Key) bool
-	Eq(Key) bool
 }
 
 type Value interface{}
@@ -55,13 +54,14 @@ func (node *Node) Get(key Key) (value Value, ok bool) {
 	if node == nil {
 		return nil, false
 	}
-	if node.Entry.Key.Eq(key) {
-		return node.Entry.Value, true
-	}
 	if key.Less(node.Entry.Key) {
 		return node.children[0].Get(key)
 	}
-	return node.children[1].Get(key)
+	if node.Entry.Key.Less(key) {
+		return node.children[1].Get(key)
+	}
+	// equal
+	return node.Entry.Value, true
 }
 
 func (node *Node) Insert(key Key, value Value) *Node {

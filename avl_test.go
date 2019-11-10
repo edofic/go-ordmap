@@ -9,10 +9,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func eq(k1, k2 Key) bool {
+	return !k1.Less(k2) && !k2.Less(k1)
+}
+
 type intKey int
 
 func (k intKey) Less(k2 Key) bool { return k < k2.(intKey) }
-func (k intKey) Eq(k2 Key) bool   { return k == k2.(intKey) }
 
 func reprTree(n *Node) string {
 	if n == nil {
@@ -43,12 +46,12 @@ func validateOrdered(t *testing.T, tree *Node) {
 	key := tree.Entry.Key
 	if tree.children[0] != nil {
 		leftKey := tree.children[0].Entry.Key
-		require.True(t, leftKey.Less(key) || key.Eq(leftKey))
+		require.True(t, leftKey.Less(key) || eq(key, leftKey))
 		validateOrdered(t, tree.children[0])
 	}
 	if tree.children[1] != nil {
 		rightKey := tree.children[1].Entry.Key
-		require.True(t, key.Less(rightKey) || key.Eq(rightKey))
+		require.True(t, key.Less(rightKey) || eq(key, rightKey))
 		validateOrdered(t, tree.children[1])
 	}
 }
@@ -77,7 +80,7 @@ func (m *TreeModel) Insert(value int) {
 	key := intKey(value)
 	index := -1
 	for i, elem := range m.elems {
-		if elem.Key.Eq(key) {
+		if eq(elem.Key, key) {
 			index = i
 			break
 		}
