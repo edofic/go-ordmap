@@ -50,18 +50,21 @@ func mkIntIntMap(entry IntIntMapEntry, left *IntIntMap, right *IntIntMap) *IntIn
 }
 
 func (node *IntIntMap) Get(key int) (value int, ok bool) {
-	if node == nil {
-		ok = false
-		return // using named returns so we keep the zero value for `value`
+	finger := node
+	for {
+		if finger == nil {
+			ok = false
+			return // using named returns so we keep the zero value for `value`
+		}
+		if key < (finger.IntIntMapEntry.K) {
+			finger = finger.children[0]
+		} else if finger.IntIntMapEntry.K < (key) {
+			finger = finger.children[1]
+		} else {
+			// equal
+			return finger.IntIntMapEntry.V, true
+		}
 	}
-	if key < (node.IntIntMapEntry.K) {
-		return node.children[0].Get(key)
-	}
-	if node.IntIntMapEntry.K < (key) {
-		return node.children[1].Get(key)
-	}
-	// equal
-	return node.IntIntMapEntry.V, true
 }
 
 func (node *IntIntMap) Insert(key int, value int) *IntIntMap {

@@ -50,18 +50,21 @@ func mk_OrdMap(entry Entry, left *OrdMap, right *OrdMap) *OrdMap {
 }
 
 func (node *OrdMap) Get(key Key) (value Value, ok bool) {
-	if node == nil {
-		ok = false
-		return // using named returns so we keep the zero value for `value`
+	finger := node
+	for {
+		if finger == nil {
+			ok = false
+			return // using named returns so we keep the zero value for `value`
+		}
+		if key.Less(finger.Entry.K) {
+			finger = finger.children[0]
+		} else if finger.Entry.K.Less(key) {
+			finger = finger.children[1]
+		} else {
+			// equal
+			return finger.Entry.V, true
+		}
 	}
-	if key.Less(node.Entry.K) {
-		return node.children[0].Get(key)
-	}
-	if node.Entry.K.Less(key) {
-		return node.children[1].Get(key)
-	}
-	// equal
-	return node.Entry.V, true
 }
 
 func (node *OrdMap) Insert(key Key, value Value) *OrdMap {
