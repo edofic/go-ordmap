@@ -1,8 +1,8 @@
 package ordmap
 
 type Entry struct {
-	Key   Key
-	Value Value
+	K Key
+	V Value
 }
 
 type OrdMap struct {
@@ -54,14 +54,14 @@ func (node *OrdMap) Get(key Key) (value Value, ok bool) {
 		ok = false
 		return // using named returns so we keep the zero value for `value`
 	}
-	if key.Less(node.Entry.Key) {
+	if key.Less(node.Entry.K) {
 		return node.children[0].Get(key)
 	}
-	if node.Entry.Key.Less(key) {
+	if node.Entry.K.Less(key) {
 		return node.children[1].Get(key)
 	}
 	// equal
-	return node.Entry.Value, true
+	return node.Entry.V, true
 }
 
 func (node *OrdMap) Insert(key Key, value Value) *OrdMap {
@@ -69,9 +69,9 @@ func (node *OrdMap) Insert(key Key, value Value) *OrdMap {
 		return mk_OrdMap(Entry{key, value}, nil, nil)
 	}
 	entry, left, right := node.Entry, node.children[0], node.children[1]
-	if node.Entry.Key.Less(key) {
+	if node.Entry.K.Less(key) {
 		right = right.Insert(key, value)
-	} else if key.Less(node.Entry.Key) {
+	} else if key.Less(node.Entry.K) {
 		left = left.Insert(key, value)
 	} else { // equals
 		entry = Entry{key, value}
@@ -84,16 +84,16 @@ func (node *OrdMap) Remove(key Key) *OrdMap {
 		return nil
 	}
 	entry, left, right := node.Entry, node.children[0], node.children[1]
-	if node.Entry.Key.Less(key) {
+	if node.Entry.K.Less(key) {
 		right = right.Remove(key)
-	} else if key.Less(node.Entry.Key) {
+	} else if key.Less(node.Entry.K) {
 		left = left.Remove(key)
 	} else { // equals
 		max := left.Max()
 		if max == nil {
 			return right
 		} else {
-			left = left.Remove(max.Key)
+			left = left.Remove(max.K)
 			entry = *max
 		}
 	}
@@ -207,11 +207,11 @@ func (i *Iterator) Done() bool {
 }
 
 func (i *Iterator) GetKey() Key {
-	return i.currentEntry.Key
+	return i.currentEntry.K
 }
 
 func (i *Iterator) GetValue() Value {
-	return i.currentEntry.Value
+	return i.currentEntry.V
 }
 
 func (i *Iterator) Next() {

@@ -1,13 +1,14 @@
 package main
 
 type IntStrMapEntry struct {
-	intKey   intKey
-	string string
+	K intKey
+	V string
 }
 
 type IntStrMap struct {
 	IntStrMapEntry    IntStrMapEntry
 	h        int
+	len      int
 	children [2]*IntStrMap
 }
 
@@ -33,9 +34,17 @@ func combinedDepthIntStrMap(n1, n2 *IntStrMap) int {
 
 // suffix IntStrMap is needed because this will get specialised in codegen
 func mkIntStrMap(entry IntStrMapEntry, left *IntStrMap, right *IntStrMap) *IntStrMap {
+	len := 1
+	if left != nil {
+		len += left.len
+	}
+	if right != nil {
+		len += right.len
+	}
 	return &IntStrMap{
 		IntStrMapEntry:    entry,
 		h:        combinedDepthIntStrMap(left, right),
+		len:      len,
 		children: [2]*IntStrMap{left, right},
 	}
 }
@@ -45,14 +54,14 @@ func (node *IntStrMap) Get(key intKey) (value string, ok bool) {
 		ok = false
 		return // using named returns so we keep the zero value for `value`
 	}
-	if key.Less(node.IntStrMapEntry.intKey) {
+	if key.Less(node.IntStrMapEntry.K) {
 		return node.children[0].Get(key)
 	}
-	if node.IntStrMapEntry.intKey.Less(key) {
+	if node.IntStrMapEntry.K.Less(key) {
 		return node.children[1].Get(key)
 	}
 	// equal
-	return node.IntStrMapEntry.string, true
+	return node.IntStrMapEntry.V, true
 }
 
 func (node *IntStrMap) Insert(key intKey, value string) *IntStrMap {
@@ -60,9 +69,9 @@ func (node *IntStrMap) Insert(key intKey, value string) *IntStrMap {
 		return mkIntStrMap(IntStrMapEntry{key, value}, nil, nil)
 	}
 	entry, left, right := node.IntStrMapEntry, node.children[0], node.children[1]
-	if node.IntStrMapEntry.intKey.Less(key) {
+	if node.IntStrMapEntry.K.Less(key) {
 		right = right.Insert(key, value)
-	} else if key.Less(node.IntStrMapEntry.intKey) {
+	} else if key.Less(node.IntStrMapEntry.K) {
 		left = left.Insert(key, value)
 	} else { // equals
 		entry = IntStrMapEntry{key, value}
@@ -75,16 +84,16 @@ func (node *IntStrMap) Remove(key intKey) *IntStrMap {
 		return nil
 	}
 	entry, left, right := node.IntStrMapEntry, node.children[0], node.children[1]
-	if node.IntStrMapEntry.intKey.Less(key) {
+	if node.IntStrMapEntry.K.Less(key) {
 		right = right.Remove(key)
-	} else if key.Less(node.IntStrMapEntry.intKey) {
+	} else if key.Less(node.IntStrMapEntry.K) {
 		left = left.Remove(key)
 	} else { // equals
 		max := left.Max()
 		if max == nil {
 			return right
 		} else {
-			left = left.Remove(max.intKey)
+			left = left.Remove(max.K)
 			entry = *max
 		}
 	}
@@ -128,7 +137,7 @@ func (node *IntStrMap) Len() int {
 	if node == nil {
 		return 0
 	}
-	return 1 + node.children[0].Len() + node.children[1].Len()
+	return node.len
 }
 
 func (node *IntStrMap) Entries() []IntStrMapEntry {
@@ -198,11 +207,11 @@ func (i *IntStrMapIterator) Done() bool {
 }
 
 func (i *IntStrMapIterator) GetKey() intKey {
-	return i.currentEntry.intKey
+	return i.currentEntry.K
 }
 
 func (i *IntStrMapIterator) GetValue() string {
-	return i.currentEntry.string
+	return i.currentEntry.V
 }
 
 func (i *IntStrMapIterator) Next() {

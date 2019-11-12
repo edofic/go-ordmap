@@ -22,9 +22,9 @@ func reprTree(n *OrdMap) string {
 		return "_"
 	}
 	if n.children[0] == nil && n.children[1] == nil {
-		return fmt.Sprintf("(%v)", n.Entry.Key)
+		return fmt.Sprintf("(%v)", n.Entry.K)
 	}
-	return fmt.Sprintf("[%v %v %v]", reprTree(n.children[0]), n.Entry.Key, reprTree(n.children[1]))
+	return fmt.Sprintf("[%v %v %v]", reprTree(n.children[0]), n.Entry.K, reprTree(n.children[1]))
 }
 
 func validateHeight(t *testing.T, tree *OrdMap) {
@@ -43,14 +43,14 @@ func validateOrdered(t *testing.T, tree *OrdMap) {
 	if tree == nil {
 		return
 	}
-	key := tree.Entry.Key
+	key := tree.Entry.K
 	if tree.children[0] != nil {
-		leftKey := tree.children[0].Entry.Key
+		leftKey := tree.children[0].Entry.K
 		require.True(t, leftKey.Less(key) || eq(key, leftKey))
 		validateOrdered(t, tree.children[0])
 	}
 	if tree.children[1] != nil {
-		rightKey := tree.children[1].Entry.Key
+		rightKey := tree.children[1].Entry.K
 		require.True(t, key.Less(rightKey) || eq(key, rightKey))
 		validateOrdered(t, tree.children[1])
 	}
@@ -80,7 +80,7 @@ func (m *TreeModel) Insert(value int) {
 	key := intKey(value)
 	index := -1
 	for i, elem := range m.elems {
-		if eq(elem.Key, key) {
+		if eq(elem.K, key) {
 			index = i
 			break
 		}
@@ -88,7 +88,7 @@ func (m *TreeModel) Insert(value int) {
 	if index == -1 { // not found
 		m.elems = append(m.elems, Entry{key, 0})
 		sort.Slice(m.elems, func(i, j int) bool {
-			return m.elems[i].Key.Less(m.elems[j].Key)
+			return m.elems[i].K.Less(m.elems[j].K)
 		})
 	}
 	if m.debug {
@@ -115,7 +115,7 @@ func (m *TreeModel) Remove(value int) {
 	// find
 	index := -1
 	for i, candidate := range m.elems {
-		if candidate.Key == key {
+		if candidate.K == key {
 			index = i
 			break
 		}
@@ -143,7 +143,7 @@ func (m *TreeModel) RemoveRandom() bool {
 		return false
 	}
 	index := rand.Intn(len(m.elems))
-	key := m.elems[index].Key
+	key := m.elems[index].K
 	value := int(key.(intKey))
 	m.Remove(value)
 	return true
@@ -207,8 +207,8 @@ func TestMinMax(t *testing.T) {
 	tree = tree.Insert(intKey(2), "bar")
 	tree = tree.Insert(intKey(3), "baz")
 
-	require.Equal(t, &Entry{Key: intKey(1), Value: "foo"}, tree.Min())
-	require.Equal(t, &Entry{Key: intKey(3), Value: "baz"}, tree.Max())
+	require.Equal(t, &Entry{K: intKey(1), V: "foo"}, tree.Min())
+	require.Equal(t, &Entry{K: intKey(3), V: "baz"}, tree.Max())
 }
 
 func TestRemoveMissing(t *testing.T) {
@@ -229,7 +229,7 @@ func TestIterator(t *testing.T) {
 
 	valuesFromEntries := make([]int, N)
 	for i, entry := range tree.Entries() {
-		valuesFromEntries[i] = entry.Value.(int)
+		valuesFromEntries[i] = entry.V.(int)
 	}
 
 	keysFromIterator := make([]int, 0, N)
@@ -251,7 +251,7 @@ func TestIteratorReverse(t *testing.T) {
 
 	valuesFromEntries := make([]int, N)
 	for i, entry := range tree.Entries() {
-		valuesFromEntries[N-i-1] = entry.Value.(int)
+		valuesFromEntries[N-i-1] = entry.V.(int)
 	}
 
 	valuesFromIterator := make([]int, 0, N)
@@ -318,6 +318,16 @@ func BenchmarkTree(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
 					tree.Min()
+				}
+			})
+			b.Run("Get", func(b *testing.B) {
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					value, ok := tree.Get(intKey(5))
+					if !ok {
+						panic("Nope")
+					}
+					panic(value)
 				}
 			})
 		})

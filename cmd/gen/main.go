@@ -13,7 +13,7 @@ func main() {
 	key := flag.String("key", "Key", "Name of the key type to use")
 	value := flag.String("value", "Value", "Name of the value type to use")
 	target := flag.String("target", "./ordmap.go", "Path for the generated code")
-	// TODO compare function - support native <
+	less := flag.String("less", ".Less", "Operation to use for comparison")
 	flag.Parse()
 
 	template := string(MustAsset("../../avl.go"))
@@ -24,6 +24,7 @@ func main() {
 	replace(&template, `\bEntry\b`, (*name)+"Entry")
 	replace(&template, `\bIterator\b`, (*name)+"Iterator")
 	replace(&template, `\biteratorStackFrame\b`, (*name)+"IteratorStackFrame")
+	replace(&template, `\b\.Less\b`, *less)
 
 	err := ioutil.WriteFile(*target, []byte(template), 0644)
 	if err != nil {
