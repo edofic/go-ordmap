@@ -6,10 +6,10 @@ type IntIntMapEntry struct {
 }
 
 type IntIntMap struct {
-	IntIntMapEntry    IntIntMapEntry
-	h        int
-	len      int
-	children [2]*IntIntMap
+	IntIntMapEntry IntIntMapEntry
+	h              int
+	len            int
+	children       [2]*IntIntMap
 }
 
 func (n *IntIntMap) Height() int {
@@ -42,10 +42,10 @@ func mkIntIntMap(entry IntIntMapEntry, left *IntIntMap, right *IntIntMap) *IntIn
 		len += right.len
 	}
 	return &IntIntMap{
-		IntIntMapEntry:    entry,
-		h:        combinedDepthIntIntMap(left, right),
-		len:      len,
-		children: [2]*IntIntMap{left, right},
+		IntIntMapEntry: entry,
+		h:              combinedDepthIntIntMap(left, right),
+		len:            len,
+		children:       [2]*IntIntMap{left, right},
 	}
 }
 
@@ -54,10 +54,10 @@ func (node *IntIntMap) Get(key int) (value int, ok bool) {
 		ok = false
 		return // using named returns so we keep the zero value for `value`
 	}
-	if key<(node.IntIntMapEntry.K) {
+	if key < (node.IntIntMapEntry.K) {
 		return node.children[0].Get(key)
 	}
-	if node.IntIntMapEntry.K<(key) {
+	if node.IntIntMapEntry.K < (key) {
 		return node.children[1].Get(key)
 	}
 	// equal
@@ -69,9 +69,9 @@ func (node *IntIntMap) Insert(key int, value int) *IntIntMap {
 		return mkIntIntMap(IntIntMapEntry{key, value}, nil, nil)
 	}
 	entry, left, right := node.IntIntMapEntry, node.children[0], node.children[1]
-	if node.IntIntMapEntry.K<(key) {
+	if node.IntIntMapEntry.K < (key) {
 		right = right.Insert(key, value)
-	} else if key<(node.IntIntMapEntry.K) {
+	} else if key < (node.IntIntMapEntry.K) {
 		left = left.Insert(key, value)
 	} else { // equals
 		entry = IntIntMapEntry{key, value}
@@ -84,9 +84,9 @@ func (node *IntIntMap) Remove(key int) *IntIntMap {
 		return nil
 	}
 	entry, left, right := node.IntIntMapEntry, node.children[0], node.children[1]
-	if node.IntIntMapEntry.K<(key) {
+	if node.IntIntMapEntry.K < (key) {
 		right = right.Remove(key)
-	} else if key<(node.IntIntMapEntry.K) {
+	} else if key < (node.IntIntMapEntry.K) {
 		left = left.Remove(key)
 	} else { // equals
 		max := left.Max()
@@ -222,7 +222,7 @@ func (i *IntIntMapIterator) Next() {
 			if frame.node == nil {
 				last := len(i.stack) - 1
 				i.stack[last] = IntIntMapIteratorStackFrame{} // zero out
-				i.stack = i.stack[:last]             // pop
+				i.stack = i.stack[:last]                      // pop
 			} else {
 				frame.state = 1
 			}

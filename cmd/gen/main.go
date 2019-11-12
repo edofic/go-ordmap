@@ -4,6 +4,7 @@ package main
 import (
 	"flag"
 	"io/ioutil"
+	"os/exec"
 	"regexp"
 )
 
@@ -14,6 +15,7 @@ func main() {
 	value := flag.String("value", "Value", "Name of the value type to use")
 	target := flag.String("target", "./ordmap.go", "Path for the generated code")
 	less := flag.String("less", ".Less", "Operation to use for comparison")
+	doFmt := flag.Bool("fmt", true, "Run `go fmt` on the generated files")
 	flag.Parse()
 
 	template := string(MustAsset("../../avl.go"))
@@ -29,6 +31,13 @@ func main() {
 	err := ioutil.WriteFile(*target, []byte(template), 0644)
 	if err != nil {
 		panic(err)
+	}
+
+	if *doFmt {
+		err = exec.Command("go", "fmt", *target).Run()
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 

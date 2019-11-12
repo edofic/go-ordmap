@@ -6,10 +6,10 @@ type IntStrMapEntry struct {
 }
 
 type IntStrMap struct {
-	IntStrMapEntry    IntStrMapEntry
-	h        int
-	len      int
-	children [2]*IntStrMap
+	IntStrMapEntry IntStrMapEntry
+	h              int
+	len            int
+	children       [2]*IntStrMap
 }
 
 func (n *IntStrMap) Height() int {
@@ -42,10 +42,10 @@ func mkIntStrMap(entry IntStrMapEntry, left *IntStrMap, right *IntStrMap) *IntSt
 		len += right.len
 	}
 	return &IntStrMap{
-		IntStrMapEntry:    entry,
-		h:        combinedDepthIntStrMap(left, right),
-		len:      len,
-		children: [2]*IntStrMap{left, right},
+		IntStrMapEntry: entry,
+		h:              combinedDepthIntStrMap(left, right),
+		len:            len,
+		children:       [2]*IntStrMap{left, right},
 	}
 }
 
@@ -222,7 +222,7 @@ func (i *IntStrMapIterator) Next() {
 			if frame.node == nil {
 				last := len(i.stack) - 1
 				i.stack[last] = IntStrMapIteratorStackFrame{} // zero out
-				i.stack = i.stack[:last]             // pop
+				i.stack = i.stack[:last]                      // pop
 			} else {
 				frame.state = 1
 			}
