@@ -320,16 +320,6 @@ func BenchmarkTree(b *testing.B) {
 					tree.Min()
 				}
 			})
-			b.Run("Get", func(b *testing.B) {
-				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
-					value, ok := tree.Get(intKey(5))
-					if !ok {
-						panic("Nope")
-					}
-					panic(value)
-				}
-			})
 		})
 	}
 }
