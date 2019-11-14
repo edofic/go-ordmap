@@ -266,7 +266,7 @@ LOOP:
 			i.stack = i.stack[:last]                      // pop
 			break LOOP
 		}
-		if (i.direction == 0 && !frame.node.IntStrMapEntry.K.Less(k)) || (i.direction == 1 && !k.Less(frame.node.IntStrMapEntry.K)) {
+		if (i.direction == 0 && !(frame.node.IntStrMapEntry.K.Less(k))) || (i.direction == 1 && !(k.Less(frame.node.IntStrMapEntry.K))) {
 			i.stack = append(i.stack, IntStrMapIteratorStackFrame{node: frame.node.children[i.direction], state: 2})
 		} else {
 			// override frame - tail call optimisation
