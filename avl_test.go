@@ -289,6 +289,11 @@ func TestIterateFrom(t *testing.T) {
 	require.Equal(t, []int{41, 40, 39, 38, 37}, valuesFromIterator)
 }
 
+func TestEmptyLen(t *testing.T) {
+	var m *OrdMap
+	require.Equal(t, 0, m.Len())
+}
+
 func BenchmarkMap(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
