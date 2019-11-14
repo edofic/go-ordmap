@@ -1,4 +1,4 @@
-//go:generate go run github.com/go-bindata/go-bindata/go-bindata ../../avl.go
+//go:generate go run ../../internal/pack/main.go -source ../../avl.go -name template -dest template.go
 package main
 
 import (
@@ -18,7 +18,6 @@ func main() {
 	doFmt := flag.Bool("fmt", true, "Run `go fmt` on the generated files")
 	flag.Parse()
 
-	template := string(MustAsset("../../avl.go"))
 	replace(&template, `package ordmap`, "package "+(*pkg))
 	replace(&template, `\bKey\b`, *key)
 	replace(&template, `\bValue\b`, *value)
