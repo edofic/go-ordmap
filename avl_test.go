@@ -261,6 +261,34 @@ func TestIteratorReverse(t *testing.T) {
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
 }
 
+func TestIterateFrom(t *testing.T) {
+	var tree *OrdMap
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(intKey(i), i)
+	}
+
+	valuesFromIterator := make([]int, 0, N)
+	for iter := tree.IterateFrom(intKey(37)); !iter.Done(); iter.Next() {
+		value := iter.GetValue().(int)
+		if value >= 42 {
+			break
+		}
+		valuesFromIterator = append(valuesFromIterator, value)
+	}
+	require.Equal(t, []int{37, 38, 39, 40, 41}, valuesFromIterator)
+
+	valuesFromIterator = make([]int, 0, N)
+	for iter := tree.IterateReverseFrom(intKey(41)); !iter.Done(); iter.Next() {
+		value := iter.GetValue().(int)
+		if value < 37 {
+			break
+		}
+		valuesFromIterator = append(valuesFromIterator, value)
+	}
+	require.Equal(t, []int{41, 40, 39, 38, 37}, valuesFromIterator)
+}
+
 func BenchmarkMap(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {

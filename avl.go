@@ -178,11 +178,19 @@ func (node *OrdMap) Max() *Entry {
 }
 
 func (node *OrdMap) Iterate() Iterator {
-	return newIterator_OrdMap(node, 0)
+	return newIterator_OrdMap(node, 0, nil)
+}
+
+func (node *OrdMap) IterateFrom(k Key) Iterator {
+	return newIterator_OrdMap(node, 0, &k)
 }
 
 func (node *OrdMap) IterateReverse() Iterator {
-	return newIterator_OrdMap(node, 1)
+	return newIterator_OrdMap(node, 1, nil)
+}
+
+func (node *OrdMap) IterateReverseFrom(k Key) Iterator {
+	return newIterator_OrdMap(node, 1, &k)
 }
 
 type iteratorStackFrame struct {
@@ -197,11 +205,15 @@ type Iterator struct {
 }
 
 // suffix _OrdMap is needed because this will get specialised in codegen
-func newIterator_OrdMap(node *OrdMap, direction int) Iterator {
+func newIterator_OrdMap(node *OrdMap, direction int, startFrom *Key) Iterator {
 	stack := make([]iteratorStackFrame, 1, node.Height())
 	stack[0] = iteratorStackFrame{node: node, state: 0}
 	iter := Iterator{direction: direction, stack: stack}
-	iter.Next()
+	if startFrom != nil {
+		iter.seek(*startFrom)
+	} else {
+		iter.Next()
+	}
 	return iter
 }
 
@@ -241,5 +253,29 @@ func (i *Iterator) Next() {
 			i.stack[len(i.stack)-1] = iteratorStackFrame{node: frame.node.children[1-i.direction], state: 0}
 		}
 
+	}
+}
+
+func (i *Iterator) seek(k Key) {
+LOOP:
+	for {
+		frame := &i.stack[len(i.stack)-1]
+		if frame.node == nil {
+			last := len(i.stack) - 1
+			i.stack[last] = iteratorStackFrame{} // zero out
+			i.stack = i.stack[:last]             // pop
+			break LOOP
+		}
+		if (i.direction == 0 && !frame.node.Entry.K.Less(k)) || (i.direction == 1 && !k.Less(frame.node.Entry.K)) {
+			i.stack = append(i.stack, iteratorStackFrame{node: frame.node.children[i.direction], state: 2})
+		} else {
+			// override frame - tail call optimisation
+			i.stack[len(i.stack)-1] = iteratorStackFrame{node: frame.node.children[1-i.direction], state: 2}
+		}
+	}
+	if len(i.stack) > 0 {
+		frame := &i.stack[len(i.stack)-1]
+		i.currentEntry = frame.node.Entry
+		frame.state = 3
 	}
 }

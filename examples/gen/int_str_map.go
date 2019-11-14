@@ -178,11 +178,19 @@ func (node *IntStrMap) Max() *IntStrMapEntry {
 }
 
 func (node *IntStrMap) Iterate() IntStrMapIterator {
-	return newIteratorIntStrMap(node, 0)
+	return newIteratorIntStrMap(node, 0, nil)
+}
+
+func (node *IntStrMap) IterateFrom(k intKey) IntStrMapIterator {
+	return newIteratorIntStrMap(node, 0, &k)
 }
 
 func (node *IntStrMap) IterateReverse() IntStrMapIterator {
-	return newIteratorIntStrMap(node, 1)
+	return newIteratorIntStrMap(node, 1, nil)
+}
+
+func (node *IntStrMap) IterateReverseFrom(k intKey) IntStrMapIterator {
+	return newIteratorIntStrMap(node, 1, &k)
 }
 
 type IntStrMapIteratorStackFrame struct {
@@ -197,11 +205,15 @@ type IntStrMapIterator struct {
 }
 
 // suffix IntStrMap is needed because this will get specialised in codegen
-func newIteratorIntStrMap(node *IntStrMap, direction int) IntStrMapIterator {
+func newIteratorIntStrMap(node *IntStrMap, direction int, startFrom *intKey) IntStrMapIterator {
 	stack := make([]IntStrMapIteratorStackFrame, 1, node.Height())
 	stack[0] = IntStrMapIteratorStackFrame{node: node, state: 0}
 	iter := IntStrMapIterator{direction: direction, stack: stack}
-	iter.Next()
+	if startFrom != nil {
+		iter.seek(*startFrom)
+	} else {
+		iter.Next()
+	}
 	return iter
 }
 
@@ -241,5 +253,29 @@ func (i *IntStrMapIterator) Next() {
 			i.stack[len(i.stack)-1] = IntStrMapIteratorStackFrame{node: frame.node.children[1-i.direction], state: 0}
 		}
 
+	}
+}
+
+func (i *IntStrMapIterator) seek(k intKey) {
+LOOP:
+	for {
+		frame := &i.stack[len(i.stack)-1]
+		if frame.node == nil {
+			last := len(i.stack) - 1
+			i.stack[last] = IntStrMapIteratorStackFrame{} // zero out
+			i.stack = i.stack[:last]                      // pop
+			break LOOP
+		}
+		if (i.direction == 0 && !frame.node.IntStrMapEntry.K.Less(k)) || (i.direction == 1 && !k.Less(frame.node.IntStrMapEntry.K)) {
+			i.stack = append(i.stack, IntStrMapIteratorStackFrame{node: frame.node.children[i.direction], state: 2})
+		} else {
+			// override frame - tail call optimisation
+			i.stack[len(i.stack)-1] = IntStrMapIteratorStackFrame{node: frame.node.children[1-i.direction], state: 2}
+		}
+	}
+	if len(i.stack) > 0 {
+		frame := &i.stack[len(i.stack)-1]
+		i.currentEntry = frame.node.IntStrMapEntry
+		frame.state = 3
 	}
 }

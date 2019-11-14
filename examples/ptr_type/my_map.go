@@ -178,11 +178,19 @@ func (node *MyMap) Max() *MyMapEntry {
 }
 
 func (node *MyMap) Iterate() MyMapIterator {
-	return newIteratorMyMap(node, 0)
+	return newIteratorMyMap(node, 0, nil)
+}
+
+func (node *MyMap) IterateFrom(k int) MyMapIterator {
+	return newIteratorMyMap(node, 0, &k)
 }
 
 func (node *MyMap) IterateReverse() MyMapIterator {
-	return newIteratorMyMap(node, 1)
+	return newIteratorMyMap(node, 1, nil)
+}
+
+func (node *MyMap) IterateReverseFrom(k int) MyMapIterator {
+	return newIteratorMyMap(node, 1, &k)
 }
 
 type MyMapIteratorStackFrame struct {
@@ -197,11 +205,15 @@ type MyMapIterator struct {
 }
 
 // suffix MyMap is needed because this will get specialised in codegen
-func newIteratorMyMap(node *MyMap, direction int) MyMapIterator {
+func newIteratorMyMap(node *MyMap, direction int, startFrom *int) MyMapIterator {
 	stack := make([]MyMapIteratorStackFrame, 1, node.Height())
 	stack[0] = MyMapIteratorStackFrame{node: node, state: 0}
 	iter := MyMapIterator{direction: direction, stack: stack}
-	iter.Next()
+	if startFrom != nil {
+		iter.seek(*startFrom)
+	} else {
+		iter.Next()
+	}
 	return iter
 }
 
@@ -241,5 +253,29 @@ func (i *MyMapIterator) Next() {
 			i.stack[len(i.stack)-1] = MyMapIteratorStackFrame{node: frame.node.children[1-i.direction], state: 0}
 		}
 
+	}
+}
+
+func (i *MyMapIterator) seek(k int) {
+LOOP:
+	for {
+		frame := &i.stack[len(i.stack)-1]
+		if frame.node == nil {
+			last := len(i.stack) - 1
+			i.stack[last] = MyMapIteratorStackFrame{} // zero out
+			i.stack = i.stack[:last]                  // pop
+			break LOOP
+		}
+		if (i.direction == 0 && !frame.node.MyMapEntry.K < (k)) || (i.direction == 1 && !k < (frame.node.MyMapEntry.K)) {
+			i.stack = append(i.stack, MyMapIteratorStackFrame{node: frame.node.children[i.direction], state: 2})
+		} else {
+			// override frame - tail call optimisation
+			i.stack[len(i.stack)-1] = MyMapIteratorStackFrame{node: frame.node.children[1-i.direction], state: 2}
+		}
+	}
+	if len(i.stack) > 0 {
+		frame := &i.stack[len(i.stack)-1]
+		i.currentEntry = frame.node.MyMapEntry
+		frame.state = 3
 	}
 }
