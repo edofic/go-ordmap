@@ -220,6 +220,15 @@ func TestRemoveMissing(t *testing.T) {
 	require.Equal(t, 2, tree.Len())
 }
 
+func TestIteratorEmpty(t *testing.T) {
+	var tree *OrdMap
+	count := 0
+	for iter := tree.Iterate(); !iter.Done(); iter.Next() {
+		count += 1
+	}
+	require.Equal(t, 0, count)
+}
+
 func TestIterator(t *testing.T) {
 	var tree *OrdMap
 	N := 100

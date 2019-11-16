@@ -206,6 +206,9 @@ type IntStrMapIterator struct {
 
 // suffix IntStrMap is needed because this will get specialised in codegen
 func newIteratorIntStrMap(node *IntStrMap, direction int, startFrom *intKey) IntStrMapIterator {
+	if node == nil {
+		return IntStrMapIterator{}
+	}
 	stack := make([]IntStrMapIteratorStackFrame, 1, node.Height())
 	stack[0] = IntStrMapIteratorStackFrame{node: node, state: 0}
 	iter := IntStrMapIterator{direction: direction, stack: stack}

@@ -206,6 +206,9 @@ type MyMapIterator struct {
 
 // suffix MyMap is needed because this will get specialised in codegen
 func newIteratorMyMap(node *MyMap, direction int, startFrom *int) MyMapIterator {
+	if node == nil {
+		return MyMapIterator{}
+	}
 	stack := make([]MyMapIteratorStackFrame, 1, node.Height())
 	stack[0] = MyMapIteratorStackFrame{node: node, state: 0}
 	iter := MyMapIterator{direction: direction, stack: stack}

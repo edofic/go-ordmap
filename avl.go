@@ -206,6 +206,9 @@ type Iterator struct {
 
 // suffix _OrdMap is needed because this will get specialised in codegen
 func newIterator_OrdMap(node *OrdMap, direction int, startFrom *Key) Iterator {
+	if node == nil {
+		return Iterator{}
+	}
 	stack := make([]iteratorStackFrame, 1, node.Height())
 	stack[0] = iteratorStackFrame{node: node, state: 0}
 	iter := Iterator{direction: direction, stack: stack}

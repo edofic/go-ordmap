@@ -206,6 +206,9 @@ type IndexIterator struct {
 
 // suffix Index is needed because this will get specialised in codegen
 func newIteratorIndex(node *Index, direction int, startFrom *CompositeKey) IndexIterator {
+	if node == nil {
+		return IndexIterator{}
+	}
 	stack := make([]IndexIteratorStackFrame, 1, node.Height())
 	stack[0] = IndexIteratorStackFrame{node: node, state: 0}
 	iter := IndexIterator{direction: direction, stack: stack}
