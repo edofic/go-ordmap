@@ -18,16 +18,17 @@ func main() {
 	doFmt := flag.Bool("fmt", true, "Run `go fmt` on the generated files")
 	flag.Parse()
 
-	replace(&template, `package ordmap`, "package "+(*pkg))
-	replace(&template, `\bKey\b`, *key)
-	replace(&template, `\bValue\b`, *value)
-	replace(&template, `(?:\b|_)OrdMap\b`, *name)
-	replace(&template, `\bEntry\b`, (*name)+"Entry")
-	replace(&template, `\bIterator\b`, (*name)+"Iterator")
-	replace(&template, `\biteratorStackFrame\b`, (*name)+"IteratorStackFrame")
-	replace(&template, `\b\.Less\b`, *less)
+	code := string(template())
+	replace(&code, `package ordmap`, "package "+(*pkg))
+	replace(&code, `\bKey\b`, *key)
+	replace(&code, `\bValue\b`, *value)
+	replace(&code, `(?:\b|_)OrdMap\b`, *name)
+	replace(&code, `\bEntry\b`, (*name)+"Entry")
+	replace(&code, `\bIterator\b`, (*name)+"Iterator")
+	replace(&code, `\biteratorStackFrame\b`, (*name)+"IteratorStackFrame")
+	replace(&code, `\b\.Less\b`, *less)
 
-	err := ioutil.WriteFile(*target, []byte(template), 0644)
+	err := ioutil.WriteFile(*target, []byte(code), 0644)
 	if err != nil {
 		panic(err)
 	}
