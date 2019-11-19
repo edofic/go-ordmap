@@ -1,3 +1,5 @@
+// DO NOT EDIT tis code was generated using go-ordmap code generation
+// go run github.com/edofic/go-ordmap/cmd/gen -name IntStrMap -key intKey -value string -target ./int_str_map.go
 package main
 
 type IntStrMapEntry struct {

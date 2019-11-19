@@ -2,10 +2,14 @@
 package main
 
 import (
+	"bytes"
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"regexp"
+	"strings"
 )
 
 func main() {
@@ -28,7 +32,12 @@ func main() {
 	replace(&code, `\biteratorStackFrame\b`, (*name)+"IteratorStackFrame")
 	replace(&code, `\b\.Less\b`, *less)
 
-	err := ioutil.WriteFile(*target, []byte(code), 0644)
+	buf := bytes.NewBuffer([]byte{})
+	fmt.Fprintln(buf, "// DO NOT EDIT tis code was generated using go-ordmap code generation")
+	fmt.Fprintln(buf, "// go run github.com/edofic/go-ordmap/cmd/gen "+strings.Join(os.Args[1:], " "))
+	buf.WriteString(code)
+
+	err := ioutil.WriteFile(*target, buf.Bytes(), 0644)
 	if err != nil {
 		panic(err)
 	}

@@ -1,3 +1,5 @@
+// DO NOT EDIT tis code was generated using go-ordmap code generation
+// go run github.com/edofic/go-ordmap/cmd/gen -name Index -key CompositeKey -value bool -target ./composite.go
 package main
 
 type IndexEntry struct {

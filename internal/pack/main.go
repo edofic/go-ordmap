@@ -20,6 +20,7 @@ func compress(raw []byte) []byte {
 
 func formatOutput(pkg, name string, compressed []byte) []byte {
 	buf := bytes.NewBuffer(make([]byte, 0))
+	fmt.Fprint(buf, "// DO NOT EDIT this code was generated using `pack` command\n")
 	fmt.Fprintf(buf, "package %s\n\n", pkg)
 	fmt.Fprintf(buf, "import (\n")
 	fmt.Fprintln(buf, "\t\"bytes\"")

@@ -1,3 +1,4 @@
+// DO NOT EDIT this code was generated using `pack` command
 package main
 
 import (
