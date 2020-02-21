@@ -277,39 +277,63 @@ func TestIterateFrom(t *testing.T) {
 		tree = tree.Insert(intKey(i), i)
 	}
 
-	valuesFromIterator := make([]int, 0, N)
-	for iter := tree.IterateFrom(intKey(37)); !iter.Done(); iter.Next() {
-		value := iter.GetValue().(int)
-		if value >= 42 {
-			break
+	t.Run("forward range", func(t *testing.T) {
+		valuesFromIterator := make([]int, 0, N)
+		for iter := tree.IterateFrom(intKey(37)); !iter.Done(); iter.Next() {
+			value := iter.GetValue().(int)
+			if value >= 42 {
+				break
+			}
+			valuesFromIterator = append(valuesFromIterator, value)
 		}
-		valuesFromIterator = append(valuesFromIterator, value)
-	}
-	require.Equal(t, []int{37, 38, 39, 40, 41}, valuesFromIterator)
+		require.Equal(t, []int{37, 38, 39, 40, 41}, valuesFromIterator)
+	})
 
-	valuesFromIterator = make([]int, 0, N)
-	for iter := tree.IterateFrom(intKey(0)); !iter.Done(); iter.Next() {
-		value := iter.GetValue().(int)
-		valuesFromIterator = append(valuesFromIterator, value)
-	}
-	require.Len(t, valuesFromIterator, 100)
-
-	valuesFromIterator = make([]int, 0, N)
-	for iter := tree.IterateReverseFrom(intKey(41)); !iter.Done(); iter.Next() {
-		value := iter.GetValue().(int)
-		if value < 37 {
-			break
+	t.Run("forward whole", func(t *testing.T) {
+		valuesFromIterator := make([]int, 0, N)
+		for iter := tree.IterateFrom(intKey(0)); !iter.Done(); iter.Next() {
+			value := iter.GetValue().(int)
+			valuesFromIterator = append(valuesFromIterator, value)
 		}
-		valuesFromIterator = append(valuesFromIterator, value)
-	}
-	require.Equal(t, []int{41, 40, 39, 38, 37}, valuesFromIterator)
+		require.Len(t, valuesFromIterator, 100)
+	})
 
-	valuesFromIterator = make([]int, 0, N)
-	for iter := tree.IterateReverseFrom(intKey(100)); !iter.Done(); iter.Next() {
-		value := iter.GetValue().(int)
-		valuesFromIterator = append(valuesFromIterator, value)
-	}
-	require.Len(t, valuesFromIterator, 100)
+	t.Run("reverse range", func(t *testing.T) {
+		valuesFromIterator := make([]int, 0, N)
+		for iter := tree.IterateReverseFrom(intKey(41)); !iter.Done(); iter.Next() {
+			value := iter.GetValue().(int)
+			if value < 37 {
+				break
+			}
+			valuesFromIterator = append(valuesFromIterator, value)
+		}
+		require.Equal(t, []int{41, 40, 39, 38, 37}, valuesFromIterator)
+	})
+
+	t.Run("reverse whole", func(t *testing.T) {
+		valuesFromIterator := make([]int, 0, N)
+		for iter := tree.IterateReverseFrom(intKey(100)); !iter.Done(); iter.Next() {
+			value := iter.GetValue().(int)
+			valuesFromIterator = append(valuesFromIterator, value)
+		}
+		require.Len(t, valuesFromIterator, 100)
+	})
+
+	t.Run("internal state", func(t *testing.T) {
+		for iter := tree.Iterate(); !iter.Done(); iter.Next() {
+			key := iter.GetKey()
+			iterFrom := tree.IterateFrom(key)
+			require.Equal(t, iter, iterFrom)
+		}
+	})
+
+	t.Run("internal state reverse", func(t *testing.T) {
+		for iter := tree.IterateReverse(); !iter.Done(); iter.Next() {
+			key := iter.GetKey()
+			iterFrom := tree.IterateReverseFrom(key)
+			require.Equal(t, iter, iterFrom)
+		}
+	})
 }
 
 func TestEmptyLen(t *testing.T) {
