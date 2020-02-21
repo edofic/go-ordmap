@@ -213,6 +213,7 @@ func newIterator_OrdMap(node *OrdMap, direction int, startFrom *Key) Iterator {
 	stack[0] = iteratorStackFrame{node: node, state: 0}
 	iter := Iterator{direction: direction, stack: stack}
 	if startFrom != nil {
+		stack[0].state = 2
 		iter.seek(*startFrom)
 	} else {
 		iter.Next()

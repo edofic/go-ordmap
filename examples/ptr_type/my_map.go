@@ -215,6 +215,7 @@ func newIteratorMyMap(node *MyMap, direction int, startFrom *int) MyMapIterator 
 	stack[0] = MyMapIteratorStackFrame{node: node, state: 0}
 	iter := MyMapIterator{direction: direction, stack: stack}
 	if startFrom != nil {
+		stack[0].state = 2
 		iter.seek(*startFrom)
 	} else {
 		iter.Next()

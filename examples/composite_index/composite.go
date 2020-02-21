@@ -215,6 +215,7 @@ func newIteratorIndex(node *Index, direction int, startFrom *CompositeKey) Index
 	stack[0] = IndexIteratorStackFrame{node: node, state: 0}
 	iter := IndexIterator{direction: direction, stack: stack}
 	if startFrom != nil {
+		stack[0].state = 2
 		iter.seek(*startFrom)
 	} else {
 		iter.Next()

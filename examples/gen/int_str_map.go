@@ -215,6 +215,7 @@ func newIteratorIntStrMap(node *IntStrMap, direction int, startFrom *intKey) Int
 	stack[0] = IntStrMapIteratorStackFrame{node: node, state: 0}
 	iter := IntStrMapIterator{direction: direction, stack: stack}
 	if startFrom != nil {
+		stack[0].state = 2
 		iter.seek(*startFrom)
 	} else {
 		iter.Next()

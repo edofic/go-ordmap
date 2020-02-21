@@ -288,6 +288,13 @@ func TestIterateFrom(t *testing.T) {
 	require.Equal(t, []int{37, 38, 39, 40, 41}, valuesFromIterator)
 
 	valuesFromIterator = make([]int, 0, N)
+	for iter := tree.IterateFrom(intKey(0)); !iter.Done(); iter.Next() {
+		value := iter.GetValue().(int)
+		valuesFromIterator = append(valuesFromIterator, value)
+	}
+	require.Len(t, valuesFromIterator, 100)
+
+	valuesFromIterator = make([]int, 0, N)
 	for iter := tree.IterateReverseFrom(intKey(41)); !iter.Done(); iter.Next() {
 		value := iter.GetValue().(int)
 		if value < 37 {
@@ -296,6 +303,13 @@ func TestIterateFrom(t *testing.T) {
 		valuesFromIterator = append(valuesFromIterator, value)
 	}
 	require.Equal(t, []int{41, 40, 39, 38, 37}, valuesFromIterator)
+
+	valuesFromIterator = make([]int, 0, N)
+	for iter := tree.IterateReverseFrom(intKey(100)); !iter.Done(); iter.Next() {
+		value := iter.GetValue().(int)
+		valuesFromIterator = append(valuesFromIterator, value)
+	}
+	require.Len(t, valuesFromIterator, 100)
 }
 
 func TestEmptyLen(t *testing.T) {
