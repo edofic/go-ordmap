@@ -146,7 +146,7 @@ func (node *MyMap) Len() int {
 }
 
 func (node *MyMap) Entries() []MyMapEntry {
-	elems := make([]MyMapEntry, 0)
+	elems := make([]MyMapEntry, 0, node.Len())
 	var step func(n *MyMap)
 	step = func(n *MyMap) {
 		if n == nil {

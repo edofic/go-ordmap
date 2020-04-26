@@ -146,7 +146,7 @@ func (node *IntStrMap) Len() int {
 }
 
 func (node *IntStrMap) Entries() []IntStrMapEntry {
-	elems := make([]IntStrMapEntry, 0)
+	elems := make([]IntStrMapEntry, 0, node.Len())
 	var step func(n *IntStrMap)
 	step = func(n *IntStrMap) {
 		if n == nil {

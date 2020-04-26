@@ -146,7 +146,7 @@ func (node *Index) Len() int {
 }
 
 func (node *Index) Entries() []IndexEntry {
-	elems := make([]IndexEntry, 0)
+	elems := make([]IndexEntry, 0, node.Len())
 	var step func(n *Index)
 	step = func(n *Index) {
 		if n == nil {

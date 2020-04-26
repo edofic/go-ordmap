@@ -144,7 +144,7 @@ func (node *OrdMap) Len() int {
 }
 
 func (node *OrdMap) Entries() []Entry {
-	elems := make([]Entry, 0)
+	elems := make([]Entry, 0, node.Len())
 	var step func(n *OrdMap)
 	step = func(n *OrdMap) {
 		if n == nil {
