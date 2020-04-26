@@ -147,16 +147,32 @@ func (node *Index) Len() int {
 
 func (node *Index) Entries() []IndexEntry {
 	elems := make([]IndexEntry, 0, node.Len())
-	var step func(n *Index)
-	step = func(n *Index) {
-		if n == nil {
-			return
-		}
-		step(n.children[0])
-		elems = append(elems, n.IndexEntry)
-		step(n.children[1])
+	if node == nil {
+		return elems
 	}
-	step(node)
+	type frame struct {
+		node     *Index
+		leftDone bool
+	}
+	var preallocated [20]frame // preallocate on stack for common case
+	stack := preallocated[:0]
+	stack = append(stack, frame{node, false})
+	for len(stack) > 0 {
+		top := &stack[len(stack)-1]
+
+		if !top.leftDone {
+			if top.node.children[0] != nil {
+				stack = append(stack, frame{top.node.children[0], false})
+			}
+			top.leftDone = true
+		} else {
+			stack = stack[:len(stack)-1] // pop
+			elems = append(elems, top.node.IndexEntry)
+			if top.node.children[1] != nil {
+				stack = append(stack, frame{top.node.children[1], false})
+			}
+		}
+	}
 	return elems
 }
 

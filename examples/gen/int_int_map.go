@@ -147,16 +147,32 @@ func (node *IntIntMap) Len() int {
 
 func (node *IntIntMap) Entries() []IntIntMapEntry {
 	elems := make([]IntIntMapEntry, 0, node.Len())
-	var step func(n *IntIntMap)
-	step = func(n *IntIntMap) {
-		if n == nil {
-			return
-		}
-		step(n.children[0])
-		elems = append(elems, n.IntIntMapEntry)
-		step(n.children[1])
+	if node == nil {
+		return elems
 	}
-	step(node)
+	type frame struct {
+		node     *IntIntMap
+		leftDone bool
+	}
+	var preallocated [20]frame // preallocate on stack for common case
+	stack := preallocated[:0]
+	stack = append(stack, frame{node, false})
+	for len(stack) > 0 {
+		top := &stack[len(stack)-1]
+
+		if !top.leftDone {
+			if top.node.children[0] != nil {
+				stack = append(stack, frame{top.node.children[0], false})
+			}
+			top.leftDone = true
+		} else {
+			stack = stack[:len(stack)-1] // pop
+			elems = append(elems, top.node.IntIntMapEntry)
+			if top.node.children[1] != nil {
+				stack = append(stack, frame{top.node.children[1], false})
+			}
+		}
+	}
 	return elems
 }
 
