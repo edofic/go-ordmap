@@ -61,6 +61,23 @@ func (n *Node234) Insert(key int) *Node234 {
 	return n.insertNonFull(key)
 }
 
+func (n *Node234) Remove(key int) *Node234 {
+	if n == nil {
+		return n
+	}
+	if n.leaf {
+		for i := 0; i < int(n.order); i++ {
+			if n.keys[i] == key {
+				n = n.dup()
+				copy(n.keys[i:], n.keys[i+1:])
+				n.order -= 1
+				return n
+			}
+		}
+	}
+	return n
+}
+
 func (n *Node234) insertNonFull(key int) *Node234 {
 	if n.order == 3 {
 		panic("insertNonFull called on a full node: " + n.visual())

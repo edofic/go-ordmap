@@ -8,7 +8,7 @@ import (
 )
 
 func TestBasic234(t *testing.T) {
-	N := 100
+	N := 3
 	require.True(t, true)
 	var n *Node234
 	fmt.Println(n.visual())
@@ -22,5 +22,19 @@ func TestBasic234(t *testing.T) {
 	for i := -N / 2; i < 3*N/2; i++ {
 		shouldContain := i >= 0 && i < N
 		require.Equal(t, shouldContain, n.Contains(i), i)
+	}
+
+	toDelete := []int{2}
+	for _, e := range toDelete {
+		for i := 0; i < len(elems); i++ {
+			if elems[i] == e {
+				copy(elems[i:], elems[i+1:])
+				elems = elems[:len(elems)-1]
+				break
+			}
+		}
+		n = n.Remove(e)
+		fmt.Println(n.visual())
+		require.Equal(t, elems, n.Keys(), e)
 	}
 }
