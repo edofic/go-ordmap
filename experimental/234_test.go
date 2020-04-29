@@ -1,30 +1,27 @@
 package ordmap
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestBasic234(t *testing.T) {
-	N := 10
+	N := 7
 
 	require.True(t, true)
 	var n *Node234
-	fmt.Println(n.visual())
 	elems := []int{}
 	for i := 0; i < N; i++ {
 		elems = append(elems, i)
 		n = n.Insert(i)
-		fmt.Println(n.visual())
 	}
 	for i := -N / 2; i < 3*N/2; i++ {
 		shouldContain := i >= 0 && i < N
 		require.Equal(t, shouldContain, n.Contains(i), i)
 	}
 
-	toDelete := []int{7}
+	toDelete := []int{}
 	for _, e := range toDelete {
 		for i := 0; i < len(elems); i++ {
 			if elems[i] == e {
@@ -34,8 +31,15 @@ func TestBasic234(t *testing.T) {
 			}
 		}
 		n = n.Remove(e)
-		fmt.Println(n.visual())
 		require.Equal(t, elems, n.Keys(), e)
 	}
-	//require.True(t, false)
+}
+
+func TestStealLeft(t *testing.T) {
+	var n *Node234
+	for _, e := range []int{0, 10, 20, 1, 2} {
+		n = n.Insert(e)
+	}
+	n = n.Remove(20)
+	require.Equal(t, []int{0, 1, 2, 10}, n.Keys())
 }
