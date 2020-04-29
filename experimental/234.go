@@ -154,8 +154,9 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 					}
 					copy(newChild.keys[:], neighbour.keys[:neighbour.order])
 					newChild.keys[neighbour.order] = n.keys[index-1]
+
 					copy(newChild.keys[neighbour.order+1:], child.keys[:child.order])
-					copy(n.subtrees[:index-2], n.subtrees[:index])
+					copy(n.subtrees[:index-1], n.subtrees[:index])
 					n.subtrees[index-1] = newChild
 					n.order -= 1
 					index -= 1
