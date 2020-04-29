@@ -92,6 +92,9 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
 				index = n.ensureChildNotMinimal(i + 1)
+				if index != i+1 { // merge happened
+					return n.removeStep(key, allowMinimal) // easiest to try again
+				}
 				child, min := n.subtrees[index].popMin()
 				n.subtrees[i+1] = child
 				n.keys[i] = min
