@@ -175,6 +175,7 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 		}
 	}
 	if n.leaf {
+		fmt.Println("leaf")
 		keys := n.keys
 		keys[n.order] = key
 		sort.Ints(keys[:n.order+1])
@@ -189,6 +190,7 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 	n = n.dup()
 	child := n.subtrees[index]
 	if child.order == 3 { // full, need to split before entering
+		fmt.Println("will split")
 		left, key1, right := child.split()
 		copy(n.keys[index+1:], n.keys[index:])
 		n.keys[index] = key1
@@ -197,7 +199,7 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 		if key < key1 {
 			left = left.insertNonFull(key)
 		} else if key == key1 {
-			return n
+			// nothing to do
 		} else {
 			right = right.insertNonFull(key)
 		}

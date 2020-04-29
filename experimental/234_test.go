@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sort"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,12 +14,14 @@ type Model234 struct {
 	t     *testing.T
 	tree  *Node234
 	elems []int
+	r     *rand.Rand
 }
 
 func NewModel234(t *testing.T) *Model234 {
 	m := &Model234{
 		t:     t,
 		elems: []int{},
+		r:     rand.New(rand.NewSource(0)),
 	}
 	m.checkInvariants()
 	return m
@@ -136,11 +139,15 @@ func TestStealLeft(t *testing.T) {
 }
 
 func TestModel(t *testing.T) {
-	N := 20
-	m := NewModel234(t)
-	for i := 0; i < N; i++ {
-		e := rand.Intn(N)
-		fmt.Println("inserting", e)
-		m.Insert(e)
+	sizes := []int{10, 20, 30, 100, 400}
+	for _, N := range sizes {
+		t.Run(strconv.Itoa(N), func(t *testing.T) {
+			m := NewModel234(t)
+			for i := 0; i < N; i++ {
+				e := m.r.Intn(N)
+				fmt.Println("inserting", e)
+				m.Insert(e)
+			}
+		})
 	}
 }
