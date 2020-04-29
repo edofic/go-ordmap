@@ -169,12 +169,12 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 
 func (n *Node234) insertNonFull(key int) *Node234 {
 	fmt.Println("insert non full", key, n.visual())
-	if n.leaf {
-		for i := 0; i < int(n.order); i++ {
-			if n.keys[i] == key {
-				return n
-			}
+	for i := 0; i < int(n.order); i++ {
+		if n.keys[i] == key {
+			return n
 		}
+	}
+	if n.leaf {
 		keys := n.keys
 		keys[n.order] = key
 		sort.Ints(keys[:n.order+1])

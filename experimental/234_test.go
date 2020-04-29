@@ -136,7 +136,7 @@ func TestStealLeft(t *testing.T) {
 }
 
 func TestModel(t *testing.T) {
-	N := 10
+	N := 20
 	m := NewModel234(t)
 	for i := 0; i < N; i++ {
 		e := rand.Intn(N)
