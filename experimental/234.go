@@ -102,66 +102,7 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 			}
 		}
 		if n.subtrees[index].order == 1 {
-			if index == 0 { // grab from the right
-				if n.subtrees[1].order > 1 {
-					child := n.subtrees[index].dup()
-					neighbour := n.subtrees[1].dup()
-					nk := neighbour.keys[0]
-					child.keys[1] = n.keys[index]
-					n.keys[index] = nk
-					child.subtrees[2] = neighbour.subtrees[0]
-					copy(neighbour.keys[:], neighbour.keys[1:])
-					copy(neighbour.subtrees[:], neighbour.subtrees[1:])
-					child.order += 1
-					neighbour.order -= 1
-					n.subtrees[0] = child
-					n.subtrees[1] = neighbour
-					return n.removeStep(key, allowMinimal)
-				} else { // right neighbour is minimal
-					child := n.subtrees[index]
-					neighbour := n.subtrees[1]
-					newChild := &Node234{
-						order: child.order + neighbour.order + 1,
-						leaf:  child.leaf, // == neighbour.leaf
-					}
-					copy(newChild.keys[:], child.keys[:child.order])
-					newChild.keys[child.order] = n.keys[index]
-					copy(newChild.keys[child.order+1:], neighbour.keys[:neighbour.order])
-					n.subtrees[index] = newChild
-					copy(n.subtrees[1:], n.subtrees[2:])
-					copy(n.keys[0:], n.keys[1:])
-					n.order -= 1
-				}
-			} else {
-				child := n.subtrees[index]
-				neighbour := n.subtrees[index-1]
-				if neighbour.order > 1 {
-					child = child.dup()
-					neighbour = neighbour.dup()
-					n.subtrees[index] = child
-					n.subtrees[index-1] = neighbour
-					copy(child.keys[1:], child.keys[:child.order])
-					copy(child.subtrees[1:], child.subtrees[:child.order+1])
-					child.order += 1
-					child.keys[0] = n.keys[index-1]
-					child.subtrees[0] = neighbour.subtrees[neighbour.order]
-					n.keys[index-1] = neighbour.keys[neighbour.order-1]
-					neighbour.order -= 1
-				} else {
-					newChild := &Node234{
-						order: child.order + neighbour.order + 1,
-						leaf:  child.leaf, // == neighbour.leaf
-					}
-					copy(newChild.keys[:], neighbour.keys[:neighbour.order])
-					newChild.keys[neighbour.order] = n.keys[index-1]
-
-					copy(newChild.keys[neighbour.order+1:], child.keys[:child.order])
-					copy(n.subtrees[:index-1], n.subtrees[:index])
-					n.subtrees[index-1] = newChild
-					n.order -= 1
-					index -= 1
-				}
-			}
+			index = n.ensureChildNotMinimal(index)
 		}
 		n.subtrees[index] = n.subtrees[index].removeStep(key, false)
 		return n
@@ -207,6 +148,69 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 		n.subtrees[index] = n.subtrees[index].insertNonFull(key)
 	}
 	return n
+}
+
+func (n *Node234) ensureChildNotMinimal(index int) int {
+	if index == 0 { // grab from the right
+		if n.subtrees[1].order > 1 {
+			child := n.subtrees[index].dup()
+			neighbour := n.subtrees[1].dup()
+			nk := neighbour.keys[0]
+			child.keys[1] = n.keys[index]
+			n.keys[index] = nk
+			child.subtrees[2] = neighbour.subtrees[0]
+			copy(neighbour.keys[:], neighbour.keys[1:])
+			copy(neighbour.subtrees[:], neighbour.subtrees[1:])
+			child.order += 1
+			neighbour.order -= 1
+			n.subtrees[0] = child
+			n.subtrees[1] = neighbour
+		} else { // right neighbour is minimal
+			child := n.subtrees[index]
+			neighbour := n.subtrees[1]
+			newChild := &Node234{
+				order: child.order + neighbour.order + 1,
+				leaf:  child.leaf, // == neighbour.leaf
+			}
+			copy(newChild.keys[:], child.keys[:child.order])
+			newChild.keys[child.order] = n.keys[index]
+			copy(newChild.keys[child.order+1:], neighbour.keys[:neighbour.order])
+			n.subtrees[index] = newChild
+			copy(n.subtrees[1:], n.subtrees[2:])
+			copy(n.keys[0:], n.keys[1:])
+			n.order -= 1
+		}
+	} else {
+		child := n.subtrees[index]
+		neighbour := n.subtrees[index-1]
+		if neighbour.order > 1 {
+			child = child.dup()
+			neighbour = neighbour.dup()
+			n.subtrees[index] = child
+			n.subtrees[index-1] = neighbour
+			copy(child.keys[1:], child.keys[:child.order])
+			copy(child.subtrees[1:], child.subtrees[:child.order+1])
+			child.order += 1
+			child.keys[0] = n.keys[index-1]
+			child.subtrees[0] = neighbour.subtrees[neighbour.order]
+			n.keys[index-1] = neighbour.keys[neighbour.order-1]
+			neighbour.order -= 1
+		} else {
+			newChild := &Node234{
+				order: child.order + neighbour.order + 1,
+				leaf:  child.leaf, // == neighbour.leaf
+			}
+			copy(newChild.keys[:], neighbour.keys[:neighbour.order])
+			newChild.keys[neighbour.order] = n.keys[index-1]
+
+			copy(newChild.keys[neighbour.order+1:], child.keys[:child.order])
+			copy(n.subtrees[:index-1], n.subtrees[:index])
+			n.subtrees[index-1] = newChild
+			n.order -= 1
+			index -= 1
+		}
+	}
+	return index
 }
 
 func (n *Node234) split() (left *Node234, key int, right *Node234) {
