@@ -2,6 +2,7 @@ package ordmap
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 	"testing"
 
@@ -82,9 +83,18 @@ func (m *Model234) checkElements() {
 
 func (m *Model234) Insert(key int) {
 	m.tree = m.tree.Insert(key)
-	m.elems = append(m.elems, key)
-	m.elems = sort.IntSlice(m.elems)
+	m.insertElems(key)
 	m.checkInvariants()
+}
+
+func (m *Model234) insertElems(key int) {
+	for _, e := range m.elems {
+		if e == key {
+			return
+		}
+	}
+	m.elems = append(m.elems, key)
+	sort.Ints(m.elems)
 }
 
 func TestBasic234(t *testing.T) {
@@ -129,6 +139,8 @@ func TestModel(t *testing.T) {
 	N := 10
 	m := NewModel234(t)
 	for i := 0; i < N; i++ {
-		m.Insert(i)
+		e := rand.Intn(N)
+		fmt.Println("inserting", e)
+		m.Insert(e)
 	}
 }
