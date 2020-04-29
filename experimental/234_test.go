@@ -1,16 +1,20 @@
 package ordmap
 
 import (
-	"github.com/stretchr/testify/require"
+	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestBasic234(t *testing.T) {
 	require.True(t, true)
 	var n *Node234
-	elems := []int{1, 2, 3}
+	fmt.Println(n.visual())
+	elems := []int{1, 2, 3, 4, 5}
 	for _, e := range elems {
 		n = n.Insert(e)
+		fmt.Println(n.visual())
 	}
-	require.ElementsMatch(t, elems, n.Keys())
+	require.Equal(t, elems, n.Keys())
 }
