@@ -27,7 +27,6 @@ func NewModel234(t *testing.T) *Model234 {
 }
 
 func (m *Model234) checkInvariants() {
-	fmt.Println(m.tree.visual())
 	m.checkNodesValidity()
 	m.checkBalance()
 	m.checkElements()
@@ -159,21 +158,21 @@ func TestModel(t *testing.T) {
 			m := NewModel234(t)
 			for i := 0; i < N; i++ {
 				e := m.r.Intn(N)
-				fmt.Println("inserting", e)
 				m.Insert(e)
 			}
 		})
 	}
-	sizes = []int{1}
+	sizes = []int{1, 3}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
 			m := NewModel234(t)
 			for i := 0; i < N; i++ {
 				m.Insert(i)
 			}
+			fmt.Println(N, m.tree.visual())
 			for i := 0; i < N; i++ {
 				e := m.r.Intn(N)
-				fmt.Println("deleting", e)
+				fmt.Println("deleting", e, "from", m.tree.visual())
 				m.Delete(e)
 			}
 		})

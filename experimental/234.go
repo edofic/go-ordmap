@@ -77,6 +77,7 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 			if n.keys[i] == key {
 				n = n.dup()
 				copy(n.keys[i:], n.keys[i+1:])
+				n.keys[n.order-1] = 0
 				n.order -= 1
 				if n.order == 0 {
 					return nil
