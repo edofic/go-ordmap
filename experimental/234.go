@@ -29,6 +29,22 @@ func (n *Node234) Keys() []int {
 	return keys
 }
 
+func (n *Node234) Contains(key int) bool {
+	if n == nil {
+		return false
+	}
+	for i := 0; i < int(n.order); i++ {
+		k := n.keys[i]
+		if k == key {
+			return true
+		}
+		if key < k {
+			return n.subtrees[i].Contains(key)
+		}
+	}
+	return n.subtrees[n.order].Contains(key)
+}
+
 func (n *Node234) Insert(key int) *Node234 {
 	if n == nil {
 		return &Node234{1, true, [3]int{key, 0, 0}, [4]*Node234{nil, nil, nil, nil}}
