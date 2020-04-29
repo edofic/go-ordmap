@@ -47,7 +47,7 @@ func (n *Node234) Insert(key int) *Node234 {
 
 func (n *Node234) insertNonFull(key int) *Node234 {
 	if n.order == 3 {
-		panic("insertNonFull called on a full node")
+		panic("insertNonFull called on a full node: " + n.visual())
 	}
 	if n.leaf {
 		keys := n.keys
@@ -62,8 +62,23 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 		}
 	}
 	n = n.dup()
-	// todo split
-	n.subtrees[index] = n.subtrees[index].insertNonFull(key)
+	child := n.subtrees[index]
+	if child.order == 3 { // full, need to split before entering
+		left, key1, right := child.split()
+		copy(n.keys[index+1:], n.keys[index:])
+		n.keys[index] = key1
+		copy(n.subtrees[index+2:], n.subtrees[index+1:])
+		n.order += 1
+		if key < key1 {
+			left = left.insertNonFull(key)
+		} else {
+			right = right.insertNonFull(key)
+		}
+		n.subtrees[index] = left
+		n.subtrees[index+1] = right
+	} else {
+		n.subtrees[index] = n.subtrees[index].insertNonFull(key)
+	}
 	return n
 }
 

@@ -11,9 +11,10 @@ func TestBasic234(t *testing.T) {
 	require.True(t, true)
 	var n *Node234
 	fmt.Println(n.visual())
-	elems := []int{1, 2, 3, 4, 5}
-	for _, e := range elems {
-		n = n.Insert(e)
+	elems := []int{}
+	for i := 0; i < 100; i++ {
+		elems = append(elems, i)
+		n = n.Insert(i)
 		fmt.Println(n.visual())
 	}
 	require.Equal(t, elems, n.Keys())
