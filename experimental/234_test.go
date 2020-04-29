@@ -8,7 +8,7 @@ import (
 )
 
 func TestBasic234(t *testing.T) {
-	N := 3
+	N := 5
 	require.True(t, true)
 	var n *Node234
 	fmt.Println(n.visual())
@@ -24,7 +24,7 @@ func TestBasic234(t *testing.T) {
 		require.Equal(t, shouldContain, n.Contains(i), i)
 	}
 
-	toDelete := []int{2}
+	toDelete := []int{4}
 	for _, e := range toDelete {
 		for i := 0; i < len(elems); i++ {
 			if elems[i] == e {

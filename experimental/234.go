@@ -65,23 +65,45 @@ func (n *Node234) Remove(key int) *Node234 {
 	if n == nil {
 		return n
 	}
+	return n.removeStep(key, true)
+}
+
+func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
+	if !allowMinimal && n.order <= 1 {
+		panic("removeNonMinimal called on a minimal node: " + n.visual())
+	}
 	if n.leaf {
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
 				n = n.dup()
 				copy(n.keys[i:], n.keys[i+1:])
 				n.order -= 1
+				if n.order == 0 {
+					return nil
+				}
 				return n
 			}
 		}
+		return n
+	} else {
+		n = n.dup()
+		index := int(n.order)
+		for i := 0; i < int(n.order); i++ {
+			if n.keys[i] == key {
+				panic("TODO")
+			}
+			if key < n.keys[i] {
+				index = i
+				break
+			}
+		}
+		// TODO merge
+		n.subtrees[index] = n.subtrees[index].removeStep(key, false)
+		return n
 	}
-	return n
 }
 
 func (n *Node234) insertNonFull(key int) *Node234 {
-	if n.order == 3 {
-		panic("insertNonFull called on a full node: " + n.visual())
-	}
 	if n.leaf {
 		keys := n.keys
 		keys[n.order] = key
