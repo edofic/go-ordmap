@@ -8,7 +8,8 @@ import (
 )
 
 func TestBasic234(t *testing.T) {
-	N := 5
+	N := 10
+
 	require.True(t, true)
 	var n *Node234
 	fmt.Println(n.visual())
@@ -16,15 +17,14 @@ func TestBasic234(t *testing.T) {
 	for i := 0; i < N; i++ {
 		elems = append(elems, i)
 		n = n.Insert(i)
-		//fmt.Println(n.visual())
+		fmt.Println(n.visual())
 	}
-	require.Equal(t, elems, n.Keys())
 	for i := -N / 2; i < 3*N/2; i++ {
 		shouldContain := i >= 0 && i < N
 		require.Equal(t, shouldContain, n.Contains(i), i)
 	}
 
-	toDelete := []int{4}
+	toDelete := []int{7}
 	for _, e := range toDelete {
 		for i := 0; i < len(elems); i++ {
 			if elems[i] == e {
@@ -37,4 +37,5 @@ func TestBasic234(t *testing.T) {
 		fmt.Println(n.visual())
 		require.Equal(t, elems, n.Keys(), e)
 	}
+	//require.True(t, false)
 }

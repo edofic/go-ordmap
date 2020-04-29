@@ -90,14 +90,19 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 		index := int(n.order)
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
-				panic("TODO")
+				child, min := n.subtrees[i+1].popMin()
+				n.subtrees[i+1] = child
+				n.keys[i] = min
+				return n
 			}
 			if key < n.keys[i] {
 				index = i
 				break
 			}
 		}
-		// TODO merge
+		if n.subtrees[index].order == 1 {
+			panic("TODO merge")
+		}
 		n.subtrees[index] = n.subtrees[index].removeStep(key, false)
 		return n
 	}
@@ -152,6 +157,23 @@ func (n *Node234) split() (left *Node234, key int, right *Node234) {
 		subtrees: [4]*Node234{n.subtrees[2], n.subtrees[3], nil, nil},
 	}
 	return
+}
+
+func (n *Node234) popMin() (*Node234, int) {
+	if n.order == 1 {
+		panic("popping from minimal")
+	}
+	n = n.dup()
+	if n.leaf {
+		k := n.keys[0]
+		copy(n.keys[:], n.keys[1:])
+		n.order -= 1
+		return n, k
+	}
+	// TODO merge
+	child, min := n.subtrees[0].popMin()
+	n.subtrees[0] = child
+	return n, min
 }
 
 func (n Node234) dup() *Node234 {
