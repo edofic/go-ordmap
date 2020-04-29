@@ -1,7 +1,6 @@
 package ordmap
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 )
@@ -168,14 +167,12 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 }
 
 func (n *Node234) insertNonFull(key int) *Node234 {
-	fmt.Println("insert non full", key, n.visual())
 	for i := 0; i < int(n.order); i++ {
 		if n.keys[i] == key {
 			return n
 		}
 	}
 	if n.leaf {
-		fmt.Println("leaf")
 		keys := n.keys
 		keys[n.order] = key
 		sort.Ints(keys[:n.order+1])
@@ -190,7 +187,6 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 	n = n.dup()
 	child := n.subtrees[index]
 	if child.order == 3 { // full, need to split before entering
-		fmt.Println("will split")
 		left, key1, right := child.split()
 		copy(n.keys[index+1:], n.keys[index:])
 		n.keys[index] = key1
