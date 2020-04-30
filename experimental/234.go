@@ -160,6 +160,9 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 func (n *Node234) ensureChildNotMinimal(index int) int {
 	fmt.Println("ensure")
 	defer fmt.Println("end ensure")
+	if n.subtrees[index] == nil {
+		fmt.Println("ensure on nil", index, n.visual())
+	}
 	if n.subtrees[index].order > 1 {
 		fmt.Println("all good")
 		return index
@@ -167,6 +170,7 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 	if index == 0 { // grab from the right
 		fmt.Println("from the right")
 		if n.subtrees[1].order > 1 {
+			fmt.Println("steal")
 			child := n.subtrees[index].dup()
 			neighbour := n.subtrees[1].dup()
 			nk := neighbour.keys[0]
@@ -180,6 +184,7 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			n.subtrees[0] = child
 			n.subtrees[1] = neighbour
 		} else { // right neighbour is minimal
+			fmt.Println("merge")
 			child := n.subtrees[index]
 			neighbour := n.subtrees[1]
 			newChild := &Node234{
@@ -193,6 +198,7 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			copy(n.subtrees[1:], n.subtrees[2:])
 			copy(n.keys[0:], n.keys[1:])
 			n.order -= 1
+			fmt.Println("new child", newChild.visual())
 		}
 	} else {
 		fmt.Println("from the left")
