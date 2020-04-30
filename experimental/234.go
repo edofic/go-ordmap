@@ -197,10 +197,14 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			copy(newChild.keys[:], child.keys[:child.order])
 			newChild.keys[child.order] = n.keys[index]
 			copy(newChild.keys[child.order+1:], neighbour.keys[:neighbour.order])
+			copy(newChild.subtrees[:], child.subtrees[:child.order+1])
+			copy(newChild.subtrees[child.order+1:], neighbour.subtrees[:neighbour.order+1])
 			n.subtrees[index] = newChild
 			copy(n.subtrees[1:], n.subtrees[2:])
 			copy(n.keys[0:], n.keys[1:])
+			n.subtrees[n.order] = nil
 			n.order -= 1
+			n.keys[n.order] = 0
 			fmt.Println("new child", newChild.visual())
 		}
 	} else {
