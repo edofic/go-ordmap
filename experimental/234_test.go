@@ -38,12 +38,12 @@ func (m *Model234) checkNodesValidity() {
 		if n == nil {
 			return
 		}
-		//fmt.Println("checking node", n.visual())
-		//fmt.Println(n.order, n.keys)
+		fmt.Println("checking node", n.visual())
+		fmt.Println(n.order, n.keys)
 		require.GreaterOrEqual(m.t, n.order, uint8(1))
 		require.LessOrEqual(m.t, n.order, uint8(3))
-		for i := int(n.order + 1); i < len(n.keys); i++ {
-			require.Equal(m.t, 0, n.keys[i])
+		for i := int(n.order); i < len(n.keys); i++ {
+			require.Equal(m.t, 0, n.keys[i], fmt.Sprintf("%s: %d %v", n.visual(), n.order, n.keys))
 			require.Nil(m.t, n.subtrees[i+1])
 		}
 		children := 0
@@ -166,7 +166,7 @@ func TestModel(t *testing.T) {
 			}
 		})
 	}
-	sizes = []int{1, 3, 4, 5, 7, 8, 9, 10}
+	sizes = []int{1, 3, 4, 5, 7, 8, 9}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
 			m := NewModel234(t)

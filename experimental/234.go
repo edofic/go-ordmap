@@ -75,6 +75,7 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 		panic("remove called on a minimal node: " + n.visual())
 	}
 	if n.leaf {
+		fmt.Println("delete from leaf", n.visual(), n.order, n.keys)
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
 				n = n.dup()
@@ -89,6 +90,7 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 		}
 		return n
 	} else {
+		fmt.Println("delete inner", n.visual())
 		n = n.dup()
 		index := int(n.order)
 		for i := 0; i < int(n.order); i++ {
@@ -164,8 +166,10 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 }
 
 func (n *Node234) ensureChildNotMinimal(index int) int {
-	fmt.Println("ensure")
-	defer fmt.Println("end ensure")
+	fmt.Println("ensure", n.visual())
+	defer func() {
+		fmt.Println("end ensure", n.visual())
+	}()
 	if n.subtrees[index] == nil {
 		fmt.Println("ensure on nil", index, n.visual())
 	}
@@ -187,6 +191,7 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			copy(neighbour.subtrees[:], neighbour.subtrees[1:])
 			child.order += 1
 			neighbour.order -= 1
+			neighbour.keys[neighbour.order] = 0
 			n.subtrees[0] = child
 			n.subtrees[1] = neighbour
 		} else { // right neighbour is minimal
@@ -208,7 +213,7 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			n.subtrees[n.order] = nil
 			n.order -= 1
 			n.keys[n.order] = 0
-			fmt.Println("new child", newChild.visual())
+			fmt.Println("after merge", n.visual())
 		}
 	} else {
 		fmt.Println("from the left")
@@ -227,6 +232,7 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			child.subtrees[0] = neighbour.subtrees[neighbour.order]
 			n.keys[index-1] = neighbour.keys[neighbour.order-1]
 			neighbour.order -= 1
+			neighbour.keys[neighbour.order] = 0
 		} else {
 			fmt.Println("merge", index)
 			fmt.Println("child", child.visual())
@@ -298,6 +304,9 @@ func (n *Node234) visual() string {
 	s := "[ " + n.subtrees[0].visual()
 	for i := 0; i < int(n.order); i++ {
 		s += " " + strconv.Itoa(n.keys[i]) + " " + n.subtrees[i+1].visual()
+	}
+	if n.keys[0] == 1 {
+		s += fmt.Sprintf(" | %d %v", n.order, n.keys)
 	}
 	s += " ]"
 	return s
