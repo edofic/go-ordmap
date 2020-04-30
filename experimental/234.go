@@ -94,6 +94,9 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
 				index = n.ensureChildNotMinimal(i + 1)
+				if n.order == 0 { // degenerated, need to drop a level
+					return n.subtrees[0].removeStep(key, false)
+				}
 				if index != i+1 { // merge happened
 					fmt.Println("merge happened")
 					return n.removeStep(key, allowMinimal) // easiest to try again
@@ -234,12 +237,11 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			}
 			copy(newChild.keys[:], neighbour.keys[:neighbour.order])
 			newChild.keys[neighbour.order] = n.keys[index-1]
-
 			copy(newChild.keys[neighbour.order+1:], child.keys[:child.order])
-			fmt.Println("shift", n.visual(), index)
+			copy(newChild.subtrees[:], neighbour.subtrees[:neighbour.order+1])
+			copy(newChild.subtrees[neighbour.order+1:], child.subtrees[:child.order+1])
 			copy(n.subtrees[index-1:], n.subtrees[index:])
 			n.subtrees[n.order] = nil
-			fmt.Println("after shift", n.visual(), index)
 			n.subtrees[index-1] = newChild
 			copy(n.keys[index-1:], n.keys[index:])
 			n.order -= 1
