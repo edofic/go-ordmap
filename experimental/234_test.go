@@ -152,7 +152,7 @@ func TestStealLeft(t *testing.T) {
 }
 
 func TestModel(t *testing.T) {
-	sizes := []int{10, 20, 30, 100, 400}
+	sizes := []int{10, 20, 30, 100}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("insert_%03d", N), func(t *testing.T) {
 			m := NewModel234(t)
@@ -162,7 +162,7 @@ func TestModel(t *testing.T) {
 			}
 		})
 	}
-	sizes = []int{1, 3, 4, 5}
+	sizes = []int{1, 3, 4, 5, 7, 8}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
 			m := NewModel234(t)
@@ -172,7 +172,7 @@ func TestModel(t *testing.T) {
 			fmt.Println(N, m.tree.visual())
 			for i := 0; i < N; i++ {
 				e := m.r.Intn(N)
-				fmt.Println("deleting", e, "from", m.tree.visual())
+				fmt.Println("\nDELETE", e)
 				m.Delete(e)
 			}
 		})
