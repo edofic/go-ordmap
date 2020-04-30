@@ -39,7 +39,6 @@ func (m *Model234) checkNodesValidity() {
 			return
 		}
 		fmt.Println("checking node", n.visual())
-		fmt.Println(n.order, n.keys)
 		require.GreaterOrEqual(m.t, n.order, uint8(1))
 		require.LessOrEqual(m.t, n.order, uint8(3))
 		for i := int(n.order); i < len(n.keys); i++ {
@@ -166,7 +165,7 @@ func TestModel(t *testing.T) {
 			}
 		})
 	}
-	sizes = []int{1, 3, 4, 5, 7, 8, 9}
+	sizes = []int{1, 3, 4, 5, 7, 8, 9, 11}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
 			m := NewModel234(t)

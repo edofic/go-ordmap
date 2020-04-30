@@ -97,6 +97,7 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 			if n.keys[i] == key {
 				index = n.ensureChildNotMinimal(i + 1)
 				if n.order == 0 { // degenerated, need to drop a level
+					fmt.Println("degenerated")
 					return n.subtrees[0].removeStep(key, false)
 				}
 				if index != i+1 { // merge happened
@@ -277,6 +278,7 @@ func (n *Node234) split() (left *Node234, key int, right *Node234) {
 }
 
 func (n *Node234) popMin() (*Node234, int) {
+	fmt.Println("popMin", n.visual())
 	if n.order == 1 {
 		panic("popping from minimal")
 	}
@@ -285,6 +287,7 @@ func (n *Node234) popMin() (*Node234, int) {
 		k := n.keys[0]
 		copy(n.keys[:], n.keys[1:])
 		n.order -= 1
+		n.keys[n.order] = 0
 		return n, k
 	}
 	_ = n.ensureChildNotMinimal(0)
@@ -304,9 +307,6 @@ func (n *Node234) visual() string {
 	s := "[ " + n.subtrees[0].visual()
 	for i := 0; i < int(n.order); i++ {
 		s += " " + strconv.Itoa(n.keys[i]) + " " + n.subtrees[i+1].visual()
-	}
-	if n.keys[0] == 1 {
-		s += fmt.Sprintf(" | %d %v", n.order, n.keys)
 	}
 	s += " ]"
 	return s
