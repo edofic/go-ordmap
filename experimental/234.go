@@ -111,6 +111,9 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 		fmt.Println("before", index, n.visual(), " :: ", n.subtrees[index].visual())
 		index = n.ensureChildNotMinimal(index)
 		fmt.Println("after", index, n.visual())
+		if n.order == 0 { // degenerated, need to drop a level
+			return n.subtrees[0].removeStep(key, false)
+		}
 		n.subtrees[index] = n.subtrees[index].removeStep(key, false)
 		return n
 	}

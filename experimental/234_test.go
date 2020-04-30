@@ -38,6 +38,9 @@ func (m *Model234) checkNodesValidity() {
 		if n == nil {
 			return
 		}
+		fmt.Println("checking node", n.visual())
+		require.GreaterOrEqual(m.t, n.order, uint8(1))
+		require.LessOrEqual(m.t, n.order, uint8(3))
 		for i := int(n.order + 1); i < len(n.keys); i++ {
 			require.Equal(m.t, 0, n.keys[i])
 			require.Nil(m.t, n.subtrees[i+1])
