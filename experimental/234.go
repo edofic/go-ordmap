@@ -1,7 +1,6 @@
 package ordmap
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 )
@@ -70,9 +69,7 @@ func (n *Node234) Remove(key int) *Node234 {
 }
 
 func (n *Node234) removeStep(key int) *Node234 {
-	fmt.Println("deleting", key, "from", n.visual())
 	if n.leaf {
-		fmt.Println("delete from leaf", n.visual(), n.order, n.keys)
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
 				n = n.dup()
@@ -87,19 +84,15 @@ func (n *Node234) removeStep(key int) *Node234 {
 		}
 		return n
 	} else {
-		fmt.Println("delete inner", n.visual())
 		n = n.dup()
 		index := int(n.order)
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
-				fmt.Println("calling ensure", n.visual())
 				index = n.ensureChildNotMinimal(i + 1)
 				if n.order == 0 { // degenerated, need to drop a level
-					fmt.Println("degenerated")
 					return n.subtrees[0].removeStep(key)
 				}
 				if index != i+1 { // merge happened
-					fmt.Println("merge happened", i, n.visual())
 					return n.removeStep(key) // easiest to try again
 				}
 				if n.keys[i] != key { // rotaiton happened
@@ -115,9 +108,7 @@ func (n *Node234) removeStep(key int) *Node234 {
 				break
 			}
 		}
-		fmt.Println("before", index, n.visual(), " :: ", n.subtrees[index].visual())
 		index = n.ensureChildNotMinimal(index)
-		fmt.Println("after", index, n.visual())
 		if n.order == 0 { // degenerated, need to drop a level
 			return n.subtrees[0].removeStep(key)
 		}
@@ -168,21 +159,11 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 }
 
 func (n *Node234) ensureChildNotMinimal(index int) int {
-	fmt.Println("ensure", n.visual())
-	defer func() {
-		fmt.Println("end ensure", n.visual())
-	}()
-	if n.subtrees[index] == nil {
-		fmt.Println("ensure on nil", index, n.visual())
-	}
 	if n.subtrees[index].order > 1 {
-		fmt.Println("all good")
 		return index
 	}
 	if index == 0 { // grab from the right
-		fmt.Println("from the right")
 		if n.subtrees[1].order > 1 {
-			fmt.Println("steal")
 			child := n.subtrees[index].dup()
 			neighbour := n.subtrees[1].dup()
 			nk := neighbour.keys[0]
@@ -197,7 +178,6 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			n.subtrees[0] = child
 			n.subtrees[1] = neighbour
 		} else { // right neighbour is minimal
-			fmt.Println("merge")
 			child := n.subtrees[index]
 			neighbour := n.subtrees[1]
 			newChild := &Node234{
@@ -215,14 +195,11 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			n.subtrees[n.order] = nil
 			n.order -= 1
 			n.keys[n.order] = 0
-			fmt.Println("after merge", n.visual())
 		}
 	} else {
-		fmt.Println("from the left")
 		child := n.subtrees[index]
 		neighbour := n.subtrees[index-1]
 		if neighbour.order > 1 {
-			fmt.Println("grab")
 			child = child.dup()
 			neighbour = neighbour.dup()
 			n.subtrees[index] = child
@@ -236,9 +213,6 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			neighbour.order -= 1
 			neighbour.keys[neighbour.order] = 0
 		} else {
-			fmt.Println("merge", index)
-			fmt.Println("child", child.visual())
-			fmt.Println("neighbour", neighbour.visual())
 			newChild := &Node234{
 				order: child.order + neighbour.order + 1,
 				leaf:  child.leaf, // == neighbour.leaf
@@ -255,7 +229,6 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			n.order -= 1
 			n.keys[n.order] = 0
 			index -= 1
-			fmt.Println("new child", newChild.visual())
 		}
 	}
 	return index
@@ -279,10 +252,6 @@ func (n *Node234) split() (left *Node234, key int, right *Node234) {
 }
 
 func (n *Node234) popMin() (nn *Node234, res int) {
-	fmt.Println("popMin", n.visual())
-	defer func() {
-		fmt.Println("post popMin", nn.visual(), res)
-	}()
 	if n.order == 1 {
 		panic("popping from minimal")
 	}
