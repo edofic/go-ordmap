@@ -60,8 +60,11 @@ func (n *Node234) Insert(key int) *Node234 {
 			keys:     [3]int{key, 0, 0},
 			subtrees: [4]*Node234{left, right, nil, nil},
 		}
+	} else {
+		n = n.dup()
 	}
-	return n.insertNonFull(key)
+	n.insertNonFullMut(key)
+	return n
 }
 
 func (n *Node234) Remove(key int) *Node234 {
@@ -120,17 +123,19 @@ func (n *Node234) removeStep(key int) *Node234 {
 	}
 }
 
-func (n *Node234) insertNonFull(key int) *Node234 {
+func (n *Node234) insertNonFullMut(key int) {
 	for i := 0; i < int(n.order); i++ {
 		if n.keys[i] == key {
-			return n
+			return
 		}
 	}
 	if n.leaf {
 		keys := n.keys
 		keys[n.order] = key
 		sort.Ints(keys[:n.order+1])
-		return &Node234{n.order + 1, true, keys, [4]*Node234{nil, nil, nil, nil}}
+		n.order += 1
+		n.keys = keys
+		return
 	}
 	index := 0
 	for i := 0; i < int(n.order); i++ {
@@ -138,7 +143,6 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 			index = i + 1
 		}
 	}
-	n = n.dup()
 	child := n.subtrees[index]
 	if child.order == 3 { // full, need to split before entering
 		left, key1, right := child.split()
@@ -151,18 +155,18 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 		}
 		n.order += 1
 		if key < key1 {
-			left = left.insertNonFull(key)
+			left.insertNonFullMut(key)
 		} else if key == key1 {
 			// nothing to do
 		} else {
-			right = right.insertNonFull(key)
+			right.insertNonFullMut(key)
 		}
 		n.subtrees[index] = left
 		n.subtrees[index+1] = right
 	} else {
-		n.subtrees[index] = n.subtrees[index].insertNonFull(key)
+		n.subtrees[index] = n.subtrees[index].dup()
+		n.subtrees[index].insertNonFullMut(key)
 	}
-	return n
 }
 
 func (n *Node234) ensureChildNotMinimal(index int) int {
