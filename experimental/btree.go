@@ -7,17 +7,17 @@ import (
 
 const MAX = 3 // must be odd
 
-type Node234 struct {
+type Node struct {
 	order    uint8 // 1..MAX
 	leaf     bool
 	keys     [MAX]int
-	subtrees [MAX + 1]*Node234
+	subtrees [MAX + 1]*Node
 }
 
-func (n *Node234) Keys() []int {
+func (n *Node) Keys() []int {
 	keys := make([]int, 0)
-	var step func(n *Node234)
-	step = func(n *Node234) {
+	var step func(n *Node)
+	step = func(n *Node) {
 		if n == nil {
 			return
 		}
@@ -31,7 +31,7 @@ func (n *Node234) Keys() []int {
 	return keys
 }
 
-func (n *Node234) Contains(key int) bool {
+func (n *Node) Contains(key int) bool {
 	finger := n
 OUTER:
 	for finger != nil {
@@ -50,13 +50,13 @@ OUTER:
 	return false
 }
 
-func (n *Node234) Insert(key int) *Node234 {
+func (n *Node) Insert(key int) *Node {
 	if n == nil {
-		return &Node234{order: 1, leaf: true, keys: [MAX]int{key, 0, 0}}
+		return &Node{order: 1, leaf: true, keys: [MAX]int{key, 0, 0}}
 	}
 	if n.order == MAX { // full root, need to split
 		left, k2, right := n.split()
-		n = &Node234{
+		n = &Node{
 			order: 1,
 			leaf:  false,
 			keys:  [MAX]int{k2, 0, 0},
@@ -70,14 +70,14 @@ func (n *Node234) Insert(key int) *Node234 {
 	return n
 }
 
-func (n *Node234) Remove(key int) *Node234 {
+func (n *Node) Remove(key int) *Node {
 	if !n.Contains(key) {
 		return n
 	}
 	return n.removeStep(key)
 }
 
-func (n *Node234) removeStep(key int) *Node234 {
+func (n *Node) removeStep(key int) *Node {
 	if n.leaf {
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
@@ -126,7 +126,7 @@ func (n *Node234) removeStep(key int) *Node234 {
 	}
 }
 
-func (n *Node234) insertNonFullMut(key int) {
+func (n *Node) insertNonFullMut(key int) {
 OUTER:
 	for {
 		for i := 0; i < int(n.order); i++ {
@@ -179,7 +179,7 @@ OUTER:
 	}
 }
 
-func (n *Node234) ensureChildNotMinimal(index int) int {
+func (n *Node) ensureChildNotMinimal(index int) int {
 	if n.subtrees[index].order > 1 {
 		return index
 	}
@@ -201,7 +201,7 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 		} else { // right neighbour is minimal
 			child := n.subtrees[index]
 			neighbour := n.subtrees[1]
-			newChild := &Node234{
+			newChild := &Node{
 				order: child.order + neighbour.order + 1,
 				leaf:  child.leaf, // == neighbour.leaf
 			}
@@ -234,7 +234,7 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 			neighbour.order -= 1
 			neighbour.keys[neighbour.order] = 0
 		} else {
-			newChild := &Node234{
+			newChild := &Node{
 				order: child.order + neighbour.order + 1,
 				leaf:  child.leaf, // == neighbour.leaf
 			}
@@ -255,9 +255,9 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 	return index
 }
 
-func (n *Node234) split() (left *Node234, key int, right *Node234) {
+func (n *Node) split() (left *Node, key int, right *Node) {
 	key = n.keys[(MAX-1)/2]
-	left = &Node234{
+	left = &Node{
 		order: (MAX - 1) / 2,
 		leaf:  n.leaf,
 	}
@@ -267,7 +267,7 @@ func (n *Node234) split() (left *Node234, key int, right *Node234) {
 	for i := 0; i <= (MAX-1)/2; i++ {
 		left.subtrees[i] = n.subtrees[i]
 	}
-	right = &Node234{
+	right = &Node{
 		order: (MAX - 1) / 2,
 		leaf:  n.leaf,
 	}
@@ -280,7 +280,7 @@ func (n *Node234) split() (left *Node234, key int, right *Node234) {
 	return
 }
 
-func (n *Node234) popMin() (nn *Node234, res int) {
+func (n *Node) popMin() (nn *Node, res int) {
 	if n.order == 1 {
 		panic("popping from minimal")
 	}
@@ -298,11 +298,11 @@ func (n *Node234) popMin() (nn *Node234, res int) {
 	return n, min
 }
 
-func (n Node234) dup() *Node234 {
+func (n Node) dup() *Node {
 	return &n
 }
 
-func (n *Node234) visual() string {
+func (n *Node) visual() string {
 	if n == nil {
 		return "_"
 	}

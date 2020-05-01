@@ -36,7 +36,7 @@ func BenchmarkAgainstAvl(b *testing.B) {
 				})
 			})
 			b.Run("234", func(b *testing.B) {
-				var tree *Node234
+				var tree *Node
 				for i := 0; i < M; i++ {
 					tree = tree.Insert(i)
 				}

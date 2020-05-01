@@ -9,15 +9,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type Model234 struct {
+type Model struct {
 	t     *testing.T
-	tree  *Node234
+	tree  *Node
 	elems []int
 	r     *rand.Rand
 }
 
-func NewModel234(t *testing.T) *Model234 {
-	m := &Model234{
+func NewModel(t *testing.T) *Model {
+	m := &Model{
 		t:     t,
 		elems: []int{},
 		r:     rand.New(rand.NewSource(0)),
@@ -26,15 +26,15 @@ func NewModel234(t *testing.T) *Model234 {
 	return m
 }
 
-func (m *Model234) checkInvariants() {
+func (m *Model) checkInvariants() {
 	m.checkNodesValidity()
 	m.checkBalance()
 	m.checkElements()
 }
 
-func (m *Model234) checkNodesValidity() {
-	var step func(*Node234)
-	step = func(n *Node234) {
+func (m *Model) checkNodesValidity() {
+	var step func(*Node)
+	step = func(n *Node) {
 		if n == nil {
 			return
 		}
@@ -62,9 +62,9 @@ func (m *Model234) checkNodesValidity() {
 	step(m.tree)
 }
 
-func (m *Model234) checkBalance() {
-	var depth func(*Node234) int
-	depth = func(n *Node234) int {
+func (m *Model) checkBalance() {
+	var depth func(*Node) int
+	depth = func(n *Node) int {
 		if n == nil {
 			return 0
 		}
@@ -80,11 +80,11 @@ func (m *Model234) checkBalance() {
 	depth(m.tree)
 }
 
-func (m *Model234) checkElements() {
+func (m *Model) checkElements() {
 	require.Equal(m.t, m.elems, m.tree.Keys())
 }
 
-func (m *Model234) Insert(key int) {
+func (m *Model) Insert(key int) {
 	oldTree := m.tree
 	oldKeys := oldTree.Keys()
 
@@ -95,7 +95,7 @@ func (m *Model234) Insert(key int) {
 	require.Equal(m.t, oldKeys, oldTree.Keys(), "old tree changed") // persistence check
 }
 
-func (m *Model234) insertElems(key int) {
+func (m *Model) insertElems(key int) {
 	for _, e := range m.elems {
 		if e == key {
 			return
@@ -105,7 +105,7 @@ func (m *Model234) insertElems(key int) {
 	sort.Ints(m.elems)
 }
 
-func (m *Model234) Delete(key int) {
+func (m *Model) Delete(key int) {
 	oldTree := m.tree
 	oldKeys := oldTree.Keys()
 
@@ -116,7 +116,7 @@ func (m *Model234) Delete(key int) {
 	require.Equal(m.t, oldKeys, oldTree.Keys()) // persistence check
 }
 
-func (m *Model234) deleteElems(key int) {
+func (m *Model) deleteElems(key int) {
 	for i, e := range m.elems {
 		if e == key {
 			copy(m.elems[i:], m.elems[i+1:])
@@ -129,7 +129,7 @@ func TestModel(t *testing.T) {
 	sizes := []int{10} // , 20, 30, 100} // , 400}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("insert_%03d", N), func(t *testing.T) {
-			m := NewModel234(t)
+			m := NewModel(t)
 			for i := 0; i < N; i++ {
 				e := m.r.Intn(N)
 				m.Insert(e)
@@ -139,7 +139,7 @@ func TestModel(t *testing.T) {
 	sizes = []int{1, 3, 4, 5, 7, 8, 9, 11, 12, 13, 20, 30} // , 100, 400}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
-			m := NewModel234(t)
+			m := NewModel(t)
 			for i := 0; i < N; i++ {
 				m.Insert(i)
 			}
