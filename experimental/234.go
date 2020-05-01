@@ -30,19 +30,22 @@ func (n *Node234) Keys() []int {
 }
 
 func (n *Node234) Contains(key int) bool {
-	if n == nil {
-		return false
-	}
-	for i := 0; i < int(n.order); i++ {
-		k := n.keys[i]
-		if k == key {
-			return true
+	finger := n
+OUTER:
+	for finger != nil {
+		for i := 0; i < int(finger.order); i++ {
+			k := finger.keys[i]
+			if k == key {
+				return true
+			}
+			if key < k {
+				finger = finger.subtrees[i]
+				continue OUTER
+			}
 		}
-		if key < k {
-			return n.subtrees[i].Contains(key)
-		}
+		finger = finger.subtrees[finger.order]
 	}
-	return n.subtrees[n.order].Contains(key)
+	return false
 }
 
 func (n *Node234) Insert(key int) *Node234 {
