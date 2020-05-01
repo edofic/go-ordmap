@@ -5,11 +5,13 @@ import (
 	"strconv"
 )
 
+const MAX = 3 // must be odd
+
 type Node234 struct {
-	order    uint8 // 1, 2, 3
+	order    uint8 // 1..MAX
 	leaf     bool
-	keys     [3]int
-	subtrees [4]*Node234
+	keys     [MAX]int
+	subtrees [MAX + 1]*Node234
 }
 
 func (n *Node234) Keys() []int {
@@ -50,16 +52,17 @@ OUTER:
 
 func (n *Node234) Insert(key int) *Node234 {
 	if n == nil {
-		return &Node234{1, true, [3]int{key, 0, 0}, [4]*Node234{nil, nil, nil, nil}}
+		return &Node234{order: 1, leaf: true, keys: [MAX]int{key, 0, 0}}
 	}
-	if n.order == 3 { // full root, need to split
+	if n.order == MAX { // full root, need to split
 		left, k2, right := n.split()
 		n = &Node234{
-			order:    1,
-			leaf:     false,
-			keys:     [3]int{k2, 0, 0},
-			subtrees: [4]*Node234{left, right, nil, nil},
+			order: 1,
+			leaf:  false,
+			keys:  [MAX]int{k2, 0, 0},
 		}
+		n.subtrees[0] = left
+		n.subtrees[1] = right
 	} else {
 		n = n.dup()
 	}
@@ -146,7 +149,7 @@ OUTER:
 			}
 		}
 		child := n.subtrees[index]
-		if child.order == 3 { // full, need to split before entering
+		if child.order == MAX { // full, need to split before entering
 			left, key1, right := child.split()
 			for i := int(n.order); i > index; i-- {
 				n.keys[i] = n.keys[i-1]
@@ -253,18 +256,26 @@ func (n *Node234) ensureChildNotMinimal(index int) int {
 }
 
 func (n *Node234) split() (left *Node234, key int, right *Node234) {
-	key = n.keys[1]
+	key = n.keys[(MAX-1)/2]
 	left = &Node234{
-		order:    1,
-		leaf:     n.leaf,
-		keys:     [3]int{n.keys[0], 0, 0},
-		subtrees: [4]*Node234{n.subtrees[0], n.subtrees[1], nil, nil},
+		order: (MAX - 1) / 2,
+		leaf:  n.leaf,
+	}
+	for i := 0; i < (MAX-1)/2; i++ {
+		left.keys[i] = n.keys[i]
+	}
+	for i := 0; i <= (MAX-1)/2; i++ {
+		left.subtrees[i] = n.subtrees[i]
 	}
 	right = &Node234{
-		order:    1,
-		leaf:     n.leaf,
-		keys:     [3]int{n.keys[2], 0, 0},
-		subtrees: [4]*Node234{n.subtrees[2], n.subtrees[3], nil, nil},
+		order: (MAX - 1) / 2,
+		leaf:  n.leaf,
+	}
+	for i := (MAX + 1) / 2; i < MAX; i++ {
+		right.keys[i-(MAX+1)/2] = n.keys[i]
+	}
+	for i := (MAX + 1) / 2; i <= MAX; i++ {
+		right.subtrees[i-(MAX+1)/2] = n.subtrees[i]
 	}
 	return
 }

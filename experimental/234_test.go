@@ -39,7 +39,7 @@ func (m *Model234) checkNodesValidity() {
 			return
 		}
 		require.GreaterOrEqual(m.t, n.order, uint8(1))
-		require.LessOrEqual(m.t, n.order, uint8(3))
+		require.LessOrEqual(m.t, n.order, uint8(MAX))
 		for i := int(n.order); i < len(n.keys); i++ {
 			require.Equal(m.t, 0, n.keys[i], fmt.Sprintf("%s: %d %v", n.visual(), n.order, n.keys))
 			//require.Nil(m.t, n.subtrees[i+1])
@@ -125,46 +125,8 @@ func (m *Model234) deleteElems(key int) {
 	}
 }
 
-func TestBasic234(t *testing.T) {
-	N := 7
-
-	require.True(t, true)
-	var n *Node234
-	elems := []int{}
-	for i := 0; i < N; i++ {
-		elems = append(elems, i)
-		n = n.Insert(i)
-	}
-	for i := -N / 2; i < 3*N/2; i++ {
-		shouldContain := i >= 0 && i < N
-		require.Equal(t, shouldContain, n.Contains(i), i)
-	}
-
-	toDelete := []int{}
-	for _, e := range toDelete {
-		for i := 0; i < len(elems); i++ {
-			if elems[i] == e {
-				copy(elems[i:], elems[i+1:])
-				elems = elems[:len(elems)-1]
-				break
-			}
-		}
-		n = n.Remove(e)
-		require.Equal(t, elems, n.Keys(), e)
-	}
-}
-
-func TestStealLeft(t *testing.T) {
-	var n *Node234
-	for _, e := range []int{0, 10, 20, 1, 2} {
-		n = n.Insert(e)
-	}
-	n = n.Remove(20)
-	require.Equal(t, []int{0, 1, 2, 10}, n.Keys())
-}
-
 func TestModel(t *testing.T) {
-	sizes := []int{10, 20, 30, 100} // , 400}
+	sizes := []int{10} // , 20, 30, 100} // , 400}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("insert_%03d", N), func(t *testing.T) {
 			m := NewModel234(t)
