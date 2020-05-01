@@ -85,9 +85,14 @@ func (m *Model234) checkElements() {
 }
 
 func (m *Model234) Insert(key int) {
+	oldTree := m.tree
+	oldKeys := oldTree.Keys()
+
 	m.tree = m.tree.Insert(key)
 	m.insertElems(key)
 	m.checkInvariants()
+
+	require.Equal(m.t, oldKeys, oldTree.Keys(), "old tree changed") // persistence check
 }
 
 func (m *Model234) insertElems(key int) {
@@ -101,9 +106,14 @@ func (m *Model234) insertElems(key int) {
 }
 
 func (m *Model234) Delete(key int) {
+	oldTree := m.tree
+	oldKeys := oldTree.Keys()
+
 	m.tree = m.tree.Remove(key)
 	m.deleteElems(key)
 	m.checkInvariants()
+
+	require.Equal(m.t, oldKeys, oldTree.Keys()) // persistence check
 }
 
 func (m *Model234) deleteElems(key int) {
