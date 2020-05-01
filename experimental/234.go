@@ -53,11 +53,11 @@ func (n *Node234) Insert(key int) *Node234 {
 		return &Node234{1, true, [3]int{key, 0, 0}, [4]*Node234{nil, nil, nil, nil}}
 	}
 	if n.order == 3 { // full root, need to split
-		left, key, right := n.split()
+		left, k2, right := n.split()
 		n = &Node234{
 			order:    1,
 			leaf:     false,
-			keys:     [3]int{key, 0, 0},
+			keys:     [3]int{k2, 0, 0},
 			subtrees: [4]*Node234{left, right, nil, nil},
 		}
 	} else {
@@ -124,48 +124,55 @@ func (n *Node234) removeStep(key int) *Node234 {
 }
 
 func (n *Node234) insertNonFullMut(key int) {
-	for i := 0; i < int(n.order); i++ {
-		if n.keys[i] == key {
+OUTER:
+	for {
+		for i := 0; i < int(n.order); i++ {
+			if n.keys[i] == key {
+				return
+			}
+		}
+		if n.leaf {
+			keys := n.keys
+			keys[n.order] = key
+			sort.Ints(keys[:n.order+1])
+			n.order += 1
+			n.keys = keys
 			return
 		}
-	}
-	if n.leaf {
-		keys := n.keys
-		keys[n.order] = key
-		sort.Ints(keys[:n.order+1])
-		n.order += 1
-		n.keys = keys
-		return
-	}
-	index := 0
-	for i := 0; i < int(n.order); i++ {
-		if key > n.keys[i] {
-			index = i + 1
+		index := 0
+		for i := 0; i < int(n.order); i++ {
+			if key > n.keys[i] {
+				index = i + 1
+			}
 		}
-	}
-	child := n.subtrees[index]
-	if child.order == 3 { // full, need to split before entering
-		left, key1, right := child.split()
-		for i := int(n.order); i > index; i-- {
-			n.keys[i] = n.keys[i-1]
-		}
-		n.keys[index] = key1
-		for i := int(n.order); i > index; i-- {
-			n.subtrees[i+1] = n.subtrees[i]
-		}
-		n.order += 1
-		if key < key1 {
-			left.insertNonFullMut(key)
-		} else if key == key1 {
-			// nothing to do
+		child := n.subtrees[index]
+		if child.order == 3 { // full, need to split before entering
+			left, key1, right := child.split()
+			for i := int(n.order); i > index; i-- {
+				n.keys[i] = n.keys[i-1]
+			}
+			n.keys[index] = key1
+			for i := int(n.order); i > index; i-- {
+				n.subtrees[i+1] = n.subtrees[i]
+			}
+			n.subtrees[index] = left
+			n.subtrees[index+1] = right
+			n.order += 1
+			if key < key1 {
+				n = left
+				continue OUTER
+			} else if key == key1 {
+				// nothing to do
+				return
+			} else {
+				n = right
+				continue OUTER
+			}
 		} else {
-			right.insertNonFullMut(key)
+			n.subtrees[index] = n.subtrees[index].dup()
+			n = n.subtrees[index]
+			continue OUTER
 		}
-		n.subtrees[index] = left
-		n.subtrees[index+1] = right
-	} else {
-		n.subtrees[index] = n.subtrees[index].dup()
-		n.subtrees[index].insertNonFullMut(key)
 	}
 }
 
