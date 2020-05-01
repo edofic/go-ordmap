@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-const MAX = 3 // must be odd
+const MAX = 5 // must be odd
 
 type Node struct {
 	order    uint8 // 1..MAX
@@ -104,7 +104,7 @@ func (n *Node) removeStep(key int) *Node {
 				if index != i+1 { // merge happened
 					return n.removeStep(key) // easiest to try again
 				}
-				if n.keys[i] != key { // rotaiton happened
+				if n.keys[i] != key { // rotation happened
 					return n.removeStep(key) // easiest to try again
 				}
 				child, min := n.subtrees[index].popMin()
