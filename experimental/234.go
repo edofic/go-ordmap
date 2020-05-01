@@ -142,9 +142,13 @@ func (n *Node234) insertNonFull(key int) *Node234 {
 	child := n.subtrees[index]
 	if child.order == 3 { // full, need to split before entering
 		left, key1, right := child.split()
-		copy(n.keys[index+1:], n.keys[index:])
+		for i := int(n.order); i > index; i-- {
+			n.keys[i] = n.keys[i-1]
+		}
 		n.keys[index] = key1
-		copy(n.subtrees[index+2:], n.subtrees[index+1:])
+		for i := int(n.order); i > index; i-- {
+			n.subtrees[i+1] = n.subtrees[i]
+		}
 		n.order += 1
 		if key < key1 {
 			left = left.insertNonFull(key)
