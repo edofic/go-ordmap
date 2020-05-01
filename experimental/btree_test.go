@@ -126,7 +126,7 @@ func (m *Model) deleteElems(key int) {
 }
 
 func TestModel(t *testing.T) {
-	sizes := []int{10} // , 20, 30, 100} // , 400}
+	sizes := []int{10, 20, 30, 100} // , 400}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("insert_%03d", N), func(t *testing.T) {
 			m := NewModel(t)
