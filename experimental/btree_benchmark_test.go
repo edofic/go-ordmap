@@ -8,7 +8,7 @@ import (
 //go:generate go run github.com/edofic/go-ordmap/cmd/gen -name AvlIntSet -key int -less "<" -value struct{} -target ./avl_int_set.go -pkg ordmap
 // to benchmark against
 
-func BenchmarkAgainstAvl(b *testing.B) {
+func BenchmarkComparison(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
 			b.Run("avl", func(b *testing.B) {
@@ -35,7 +35,7 @@ func BenchmarkAgainstAvl(b *testing.B) {
 					}
 				})
 			})
-			b.Run("234", func(b *testing.B) {
+			b.Run("btree", func(b *testing.B) {
 				var tree *Node
 				for i := 0; i < M; i++ {
 					tree = tree.Insert(i)
