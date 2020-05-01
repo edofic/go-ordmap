@@ -92,6 +92,7 @@ func (n *Node234) removeStep(key int) *Node234 {
 		index := int(n.order)
 		for i := 0; i < int(n.order); i++ {
 			if n.keys[i] == key {
+				fmt.Println("calling ensure", n.visual())
 				index = n.ensureChildNotMinimal(i + 1)
 				if n.order == 0 { // degenerated, need to drop a level
 					fmt.Println("degenerated")
@@ -99,6 +100,9 @@ func (n *Node234) removeStep(key int) *Node234 {
 				}
 				if index != i+1 { // merge happened
 					fmt.Println("merge happened", i, n.visual())
+					return n.removeStep(key) // easiest to try again
+				}
+				if n.keys[i] != key { // rotaiton happened
 					return n.removeStep(key) // easiest to try again
 				}
 				child, min := n.subtrees[index].popMin()
@@ -274,8 +278,11 @@ func (n *Node234) split() (left *Node234, key int, right *Node234) {
 	return
 }
 
-func (n *Node234) popMin() (*Node234, int) {
+func (n *Node234) popMin() (nn *Node234, res int) {
 	fmt.Println("popMin", n.visual())
+	defer func() {
+		fmt.Println("post popMin", nn.visual(), res)
+	}()
 	if n.order == 1 {
 		panic("popping from minimal")
 	}
