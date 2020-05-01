@@ -165,7 +165,7 @@ func TestModel(t *testing.T) {
 			}
 		})
 	}
-	sizes = []int{1, 3, 4, 5, 7, 8, 9, 11}
+	sizes = []int{1, 3, 4, 5, 7, 8, 9, 11, 12}
 	for _, N := range sizes {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
 			m := NewModel234(t)

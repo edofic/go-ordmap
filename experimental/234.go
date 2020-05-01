@@ -66,14 +66,11 @@ func (n *Node234) Remove(key int) *Node234 {
 	if !n.Contains(key) {
 		return n
 	}
-	return n.removeStep(key, true)
+	return n.removeStep(key)
 }
 
-func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
+func (n *Node234) removeStep(key int) *Node234 {
 	fmt.Println("deleting", key, "from", n.visual())
-	if !allowMinimal && n.order <= 1 {
-		panic("remove called on a minimal node: " + n.visual())
-	}
 	if n.leaf {
 		fmt.Println("delete from leaf", n.visual(), n.order, n.keys)
 		for i := 0; i < int(n.order); i++ {
@@ -98,11 +95,11 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 				index = n.ensureChildNotMinimal(i + 1)
 				if n.order == 0 { // degenerated, need to drop a level
 					fmt.Println("degenerated")
-					return n.subtrees[0].removeStep(key, false)
+					return n.subtrees[0].removeStep(key)
 				}
 				if index != i+1 { // merge happened
-					fmt.Println("merge happened")
-					return n.removeStep(key, allowMinimal) // easiest to try again
+					fmt.Println("merge happened", i, n.visual())
+					return n.removeStep(key) // easiest to try again
 				}
 				child, min := n.subtrees[index].popMin()
 				n.subtrees[i+1] = child
@@ -118,9 +115,9 @@ func (n *Node234) removeStep(key int, allowMinimal bool) *Node234 {
 		index = n.ensureChildNotMinimal(index)
 		fmt.Println("after", index, n.visual())
 		if n.order == 0 { // degenerated, need to drop a level
-			return n.subtrees[0].removeStep(key, false)
+			return n.subtrees[0].removeStep(key)
 		}
-		n.subtrees[index] = n.subtrees[index].removeStep(key, false)
+		n.subtrees[index] = n.subtrees[index].removeStep(key)
 		return n
 	}
 }
