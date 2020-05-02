@@ -69,11 +69,11 @@ func (m *Model) checkNodesValidity() {
 				children += 1
 			}
 		}
-		if n.leaf {
-			require.Equal(m.t, children, 0)
+		if n.height == 1 {
+			require.Equal(m.t, 0, children)
 			return
 		}
-		require.Greater(m.t, children, 0)
+		require.Equal(m.t, int(n.order+1), children)
 		for i := 0; i <= int(n.order); i++ {
 			step(n.subtrees[i])
 		}
@@ -82,19 +82,17 @@ func (m *Model) checkNodesValidity() {
 }
 
 func (m *Model) checkBalance() {
-	var depth func(*Node) int
-	depth = func(n *Node) int {
+	var depth func(*Node) uint8
+	depth = func(n *Node) uint8 {
 		if n == nil {
 			return 0
 		}
-		if n.leaf {
-			return 1
+		if n.height > 1 {
+			for _, s := range n.subtrees[:n.order+1] {
+				require.Equal(m.t, n.height-1, depth(s))
+			}
 		}
-		d1 := depth(n.subtrees[0])
-		for _, n = range n.subtrees[1 : n.order+1] {
-			require.Equal(m.t, d1, depth(n))
-		}
-		return d1
+		return n.height
 	}
 	depth(m.tree)
 }

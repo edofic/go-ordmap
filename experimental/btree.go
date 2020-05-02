@@ -19,7 +19,7 @@ var zeroEntry Entry
 
 type Node struct {
 	order    uint8 // 1..MAX
-	leaf     bool
+	height   uint8
 	entries  [MAX]Entry
 	subtrees [MAX + 1]*Node
 }
@@ -63,15 +63,15 @@ OUTER:
 
 func (n *Node) Insert(key Key, value Value) *Node {
 	if n == nil {
-		n = &Node{order: 1, leaf: true}
+		n = &Node{order: 1, height: 1}
 		n.entries[0] = Entry{key, value}
 		return n
 	}
 	if n.order == MAX { // full root, need to split
 		left, entry, right := n.split()
 		n = &Node{
-			order: 1,
-			leaf:  false,
+			order:  1,
+			height: left.height + 1,
 		}
 		n.entries[0] = entry
 		n.subtrees[0] = left
@@ -87,7 +87,7 @@ func (n *Node) Remove(key Key) *Node {
 	if _, ok := n.Get(key); !ok {
 		return n
 	}
-	if n.leaf && n.order == 1 && n.entries[0].K.Cmp(key) == 0 {
+	if n.height == 1 && n.order == 1 && n.entries[0].K.Cmp(key) == 0 {
 		return nil
 	}
 	n = n.dup()
@@ -100,7 +100,7 @@ func (n *Node) Min() *Entry {
 		return nil
 	}
 	for finger := n; ; finger = finger.subtrees[0] {
-		if finger.leaf {
+		if finger.height == 1 {
 			entry := finger.entries[0] // not taking address of an inner value directly
 			return &entry
 		}
@@ -112,14 +112,20 @@ func (n *Node) Max() *Entry {
 		return nil
 	}
 	for finger := n; ; finger = finger.subtrees[finger.order] {
-		if finger.leaf {
+		if finger.height == 1 {
 			entry := finger.entries[finger.order-1] // not taking address of an inner value directly
 			return &entry
 		}
 	}
 }
 
-// TODO func (n *Node) Height() int {}
+func (n *Node) Height() int {
+	if n == nil {
+		return 0
+	}
+	return int(n.height)
+}
+
 // TODO func (n *Node) Len() int {}
 // TODO func (n *Node) Iterate() Iterator {}
 // TODO func (n *Node) IterateFrom(k Key) Iterator {}
@@ -129,7 +135,7 @@ func (n *Node) Max() *Entry {
 func (n *Node) removeStepMut(key Key) {
 OUTER:
 	for {
-		if n.leaf {
+		if n.height == 1 {
 			for i := 0; i < int(n.order); i++ {
 				if n.entries[i].K.Cmp(key) == 0 {
 					top := int(n.order) - 1
@@ -186,7 +192,7 @@ OUTER:
 				return
 			}
 		}
-		if n.leaf {
+		if n.height == 1 {
 			n.entries[n.order] = Entry{key, value}
 			n.order += 1
 			for i := int(n.order) - 1; i > 0; i-- {
@@ -259,8 +265,8 @@ func (n *Node) ensureChildNotMinimal(index int) int {
 			child := n.subtrees[index]
 			neighbour := n.subtrees[1]
 			newChild := &Node{
-				order: child.order + neighbour.order + 1,
-				leaf:  child.leaf, // == neighbour.leaf
+				order:  child.order + neighbour.order + 1,
+				height: child.height, // == neighbour.height
 			}
 			copy(newChild.entries[:], child.entries[:child.order])
 			newChild.entries[child.order] = n.entries[index]
@@ -293,8 +299,8 @@ func (n *Node) ensureChildNotMinimal(index int) int {
 			neighbour.entries[neighbour.order] = zeroEntry
 		} else {
 			newChild := &Node{
-				order: child.order + neighbour.order + 1,
-				leaf:  child.leaf, // == neighbour.leaf
+				order:  child.order + neighbour.order + 1,
+				height: child.height, // == neighbour.height
 			}
 			copy(newChild.entries[:], neighbour.entries[:neighbour.order])
 			newChild.entries[neighbour.order] = n.entries[index-1]
@@ -316,8 +322,8 @@ func (n *Node) ensureChildNotMinimal(index int) int {
 func (n *Node) split() (left *Node, entry Entry, right *Node) {
 	entry = n.entries[(MAX-1)/2]
 	left = &Node{
-		order: (MAX - 1) / 2,
-		leaf:  n.leaf,
+		order:  (MAX - 1) / 2,
+		height: n.height,
 	}
 	for i := 0; i < (MAX-1)/2; i++ {
 		left.entries[i] = n.entries[i]
@@ -326,8 +332,8 @@ func (n *Node) split() (left *Node, entry Entry, right *Node) {
 		left.subtrees[i] = n.subtrees[i]
 	}
 	right = &Node{
-		order: (MAX - 1) / 2,
-		leaf:  n.leaf,
+		order:  (MAX - 1) / 2,
+		height: n.height,
 	}
 	for i := (MAX + 1) / 2; i < MAX; i++ {
 		right.entries[i-(MAX+1)/2] = n.entries[i]
@@ -341,7 +347,7 @@ func (n *Node) split() (left *Node, entry Entry, right *Node) {
 func (n *Node) popMinMut() Entry {
 OUTER:
 	for {
-		if n.leaf {
+		if n.height == 1 {
 			e := n.entries[0]
 			for i := 1; i < int(n.order); i++ {
 				n.entries[i-1] = n.entries[i]
