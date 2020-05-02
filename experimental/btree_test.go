@@ -10,17 +10,17 @@ import (
 )
 
 type Model struct {
-	t     *testing.T
-	tree  *Node
-	elems []int
-	r     *rand.Rand
+	t       *testing.T
+	tree    *Node
+	entries []Entry
+	r       *rand.Rand
 }
 
 func NewModel(t *testing.T) *Model {
 	m := &Model{
-		t:     t,
-		elems: []int{},
-		r:     rand.New(rand.NewSource(0)),
+		t:       t,
+		entries: []Entry{},
+		r:       rand.New(rand.NewSource(0)),
 	}
 	m.checkInvariants()
 	return m
@@ -40,8 +40,8 @@ func (m *Model) checkNodesValidity() {
 		}
 		require.GreaterOrEqual(m.t, n.order, uint8(1))
 		require.LessOrEqual(m.t, n.order, uint8(MAX))
-		for i := int(n.order); i < len(n.keys); i++ {
-			require.Equal(m.t, 0, n.keys[i], fmt.Sprintf("%s: %d %v", n.visual(), n.order, n.keys))
+		for i := int(n.order); i < len(n.entries); i++ {
+			require.Equal(m.t, zeroEntry, n.entries[i], fmt.Sprintf("%s: %d %v", n.visual(), n.order, n.entries))
 			//require.Nil(m.t, n.subtrees[i+1])
 		}
 		children := 0
@@ -81,46 +81,49 @@ func (m *Model) checkBalance() {
 }
 
 func (m *Model) checkElements() {
-	require.Equal(m.t, m.elems, m.tree.Keys())
+	require.Equal(m.t, m.entries, m.tree.Entries())
 }
 
-func (m *Model) Insert(key int) {
+func (m *Model) Insert(key Key, value Value) {
 	oldTree := m.tree
-	oldKeys := oldTree.Keys()
+	oldEntries := oldTree.Entries()
 
-	m.tree = m.tree.Insert(key)
-	m.insertElems(key)
+	m.tree = m.tree.Insert(key, value)
+	m.insertEntry(key, value)
 	m.checkInvariants()
 
-	require.Equal(m.t, oldKeys, oldTree.Keys(), "old tree changed") // persistence check
+	require.Equal(m.t, oldEntries, oldTree.Entries(), "old tree changed") // persistence check
 }
 
-func (m *Model) insertElems(key int) {
-	for _, e := range m.elems {
-		if e == key {
+func (m *Model) insertEntry(key int, value Value) {
+	for i, e := range m.entries {
+		if e.K == key {
+			m.entries[i].V = value
 			return
 		}
 	}
-	m.elems = append(m.elems, key)
-	sort.Ints(m.elems)
+	m.entries = append(m.entries, Entry{key, value})
+	sort.Slice(m.entries, func(i, j int) bool {
+		return m.entries[i].K < m.entries[j].K
+	})
 }
 
 func (m *Model) Delete(key int) {
 	oldTree := m.tree
-	oldKeys := oldTree.Keys()
+	oldEntries := oldTree.Entries()
 
 	m.tree = m.tree.Remove(key)
-	m.deleteElems(key)
+	m.deleteEntry(key)
 	m.checkInvariants()
 
-	require.Equal(m.t, oldKeys, oldTree.Keys()) // persistence check
+	require.Equal(m.t, oldEntries, oldTree.Entries()) // persistence check
 }
 
-func (m *Model) deleteElems(key int) {
-	for i, e := range m.elems {
-		if e == key {
-			copy(m.elems[i:], m.elems[i+1:])
-			m.elems = m.elems[:len(m.elems)-1]
+func (m *Model) deleteEntry(key int) {
+	for i, e := range m.entries {
+		if e.K == key {
+			copy(m.entries[i:], m.entries[i+1:])
+			m.entries = m.entries[:len(m.entries)-1]
 		}
 	}
 }
@@ -132,7 +135,7 @@ func TestModel(t *testing.T) {
 			m := NewModel(t)
 			for i := 0; i < N; i++ {
 				e := m.r.Intn(N)
-				m.Insert(e)
+				m.Insert(e, struct{}{})
 			}
 		})
 	}
@@ -141,7 +144,7 @@ func TestModel(t *testing.T) {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
 			m := NewModel(t)
 			for i := 0; i < N; i++ {
-				m.Insert(i)
+				m.Insert(i, struct{}{})
 			}
 			for i := 0; i < N; i++ {
 				e := m.r.Intn(N)

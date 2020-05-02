@@ -16,7 +16,7 @@ func BenchmarkComparison(b *testing.B) {
 				for i := 0; i < M; i++ {
 					tree = tree.Insert(i, struct{}{})
 				}
-				b.Run("Contains", func(b *testing.B) {
+				b.Run("Get", func(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
 						tree.Get(5)
@@ -38,18 +38,18 @@ func BenchmarkComparison(b *testing.B) {
 			b.Run("btree", func(b *testing.B) {
 				var tree *Node
 				for i := 0; i < M; i++ {
-					tree = tree.Insert(i)
+					tree = tree.Insert(i, struct{}{})
 				}
-				b.Run("Contains", func(b *testing.B) {
+				b.Run("Get", func(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
-						tree.Contains(5)
+						tree.Get(5)
 					}
 				})
 				b.Run("Insert", func(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
-						tree.Insert(M + 1)
+						tree.Insert(M+1, struct{}{})
 					}
 				})
 				b.Run("Remove", func(b *testing.B) {
