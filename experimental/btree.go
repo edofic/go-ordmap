@@ -87,7 +87,7 @@ func (n *Node) Remove(key Key) *Node {
 	if _, ok := n.Get(key); !ok {
 		return n
 	}
-	if n.leaf && n.order == 1 && n.entries[0].K == key {
+	if n.leaf && n.order == 1 && n.entries[0].K.Cmp(key) == 0 {
 		return nil
 	}
 	n = n.dup()
@@ -100,7 +100,7 @@ OUTER:
 	for {
 		if n.leaf {
 			for i := 0; i < int(n.order); i++ {
-				if n.entries[i].K == key {
+				if n.entries[i].K.Cmp(key) == 0 {
 					top := int(n.order) - 1
 					for j := i; j < top; j++ {
 						n.entries[j] = n.entries[j+1]
@@ -114,13 +114,13 @@ OUTER:
 		} else {
 			index := int(n.order)
 			for i := 0; i < int(n.order); i++ {
-				if n.entries[i].K == key { // inner delete
+				if n.entries[i].K.Cmp(key) == 0 { // inner delete
 					index = n.ensureChildNotMinimal(i + 1)
 					if n.order == 0 { // degenerated, need to drop a level
 						*n = *n.subtrees[0]
 						continue OUTER
 					}
-					if index != i+1 || n.entries[i].K != key { // merge OR rotation
+					if index != i+1 || n.entries[i].K.Cmp(key) != 0 { // merge OR rotation
 						continue OUTER // easiest to try again
 					}
 					child := n.subtrees[index].dup()
@@ -150,7 +150,7 @@ func (n *Node) insertNonFullMut(key Key, value Value) {
 OUTER:
 	for {
 		for i := 0; i < int(n.order); i++ {
-			if n.entries[i].K == key {
+			if n.entries[i].K.Cmp(key) == 0 {
 				n.entries[i].V = value
 				return
 			}

@@ -9,10 +9,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type intKey int
+type myKey int
 
-func (i intKey) Cmp(i2 Key) int {
-	return int(i2.(intKey)) - int(i)
+func (i *myKey) Cmp(i2 Key) int {
+	return int(*i) - int(*(i2.(*myKey)))
+}
+
+// using a pointer based key where k1.Cmp(k2) == 0 does not imply k1 == k2 so we can fish out ==-based bugs with tests
+func intKey(i int) Key {
+	k := myKey(i)
+	return &k
+}
+
+func TestIntKey(t *testing.T) {
+	require.Equal(t, 0, intKey(1).Cmp(intKey(1)))
+	require.Less(t, intKey(1).Cmp(intKey(2)), 0)
+	require.Greater(t, intKey(5).Cmp(intKey(2)), 0)
 }
 
 type Model struct {
