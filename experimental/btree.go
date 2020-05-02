@@ -1,7 +1,6 @@
 package ordmap
 
 import (
-	"sort"
 	"strconv"
 )
 
@@ -142,11 +141,15 @@ OUTER:
 			}
 		}
 		if n.leaf {
-			keys := n.keys
-			keys[n.order] = key
-			sort.Ints(keys[:n.order+1])
+			n.keys[n.order] = key
 			n.order += 1
-			n.keys = keys
+			for i := int(n.order) - 1; i > 0; i-- {
+				if n.keys[i] < n.keys[i-1] {
+					n.keys[i], n.keys[i-1] = n.keys[i-1], n.keys[i]
+				} else {
+					break
+				}
+			}
 			return
 		}
 		index := 0
