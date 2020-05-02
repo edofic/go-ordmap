@@ -48,6 +48,7 @@ func (m *Model) checkInvariants() {
 	m.checkNodesValidity()
 	m.checkBalance()
 	m.checkElements()
+	m.checkMinMax()
 }
 
 func (m *Model) checkNodesValidity() {
@@ -100,6 +101,18 @@ func (m *Model) checkBalance() {
 
 func (m *Model) checkElements() {
 	require.Equal(m.t, m.entries, m.tree.Entries(), m.tree.visual())
+}
+
+func (m *Model) checkMinMax() {
+	if len(m.entries) == 0 {
+		require.Nil(m.t, m.tree.Min())
+		require.Nil(m.t, m.tree.Max())
+	} else {
+		min := m.tree.Min()
+		require.Equal(m.t, *min, m.entries[0])
+		max := m.tree.Max()
+		require.Equal(m.t, *max, m.entries[len(m.entries)-1])
+	}
 }
 
 func (m *Model) Insert(key Key, value Value) {

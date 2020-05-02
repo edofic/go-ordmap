@@ -95,6 +95,37 @@ func (n *Node) Remove(key Key) *Node {
 	return n
 }
 
+func (n *Node) Min() *Entry {
+	if n == nil {
+		return nil
+	}
+	for finger := n; ; finger = finger.subtrees[0] {
+		if finger.leaf {
+			entry := finger.entries[0] // not taking address of an inner value directly
+			return &entry
+		}
+	}
+}
+
+func (n *Node) Max() *Entry {
+	if n == nil {
+		return nil
+	}
+	for finger := n; ; finger = finger.subtrees[finger.order] {
+		if finger.leaf {
+			entry := finger.entries[finger.order-1] // not taking address of an inner value directly
+			return &entry
+		}
+	}
+}
+
+// TODO func (n *Node) Height() int {}
+// TODO func (n *Node) Len() int {}
+// TODO func (n *Node) Iterate() Iterator {}
+// TODO func (n *Node) IterateFrom(k Key) Iterator {}
+// TODO func (n *Node) IterateReverse() Iterator {}
+// TODO func (n *Node) IterateReverseFrom(k Key) Iterator {}
+
 func (n *Node) removeStepMut(key Key) {
 OUTER:
 	for {
