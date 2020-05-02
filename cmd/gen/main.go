@@ -1,4 +1,5 @@
-//go:generate go run ../../internal/pack/main.go -source ../../avl.go -name template -dest template.go
+//go:generate go run ../../internal/pack/main.go -source ../../avl.go -name avl -dest template_avl.go
+//go:generate go run ../../internal/pack/main.go -source ../../experimental/btree.go -name btree -dest template_btree.go
 package main
 
 import (
@@ -22,7 +23,7 @@ func main() {
 	doFmt := flag.Bool("fmt", true, "Run `go fmt` on the generated files")
 	flag.Parse()
 
-	code := string(template())
+	code := string(avl())
 	replace(&code, `package ordmap`, "package "+(*pkg))
 	replace(&code, `\bKey\b`, *key)
 	replace(&code, `\bValue\b`, *value)
