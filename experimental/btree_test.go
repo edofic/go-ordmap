@@ -9,6 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type intKey int
+
+func (i intKey) Cmp(i2 Key) int {
+	return int(i2.(intKey)) - int(i)
+}
+
 type Model struct {
 	t       *testing.T
 	tree    *Node
@@ -95,20 +101,20 @@ func (m *Model) Insert(key Key, value Value) {
 	require.Equal(m.t, oldEntries, oldTree.Entries(), "old tree changed") // persistence check
 }
 
-func (m *Model) insertEntry(key int, value Value) {
+func (m *Model) insertEntry(key Key, value Value) {
 	for i, e := range m.entries {
-		if e.K == key {
+		if e.K.Cmp(key) == 0 {
 			m.entries[i].V = value
 			return
 		}
 	}
 	m.entries = append(m.entries, Entry{key, value})
 	sort.Slice(m.entries, func(i, j int) bool {
-		return m.entries[i].K < m.entries[j].K
+		return m.entries[i].K.Cmp(m.entries[j].K) < 0
 	})
 }
 
-func (m *Model) Delete(key int) {
+func (m *Model) Delete(key Key) {
 	oldTree := m.tree
 	oldEntries := oldTree.Entries()
 
@@ -119,9 +125,9 @@ func (m *Model) Delete(key int) {
 	require.Equal(m.t, oldEntries, oldTree.Entries()) // persistence check
 }
 
-func (m *Model) deleteEntry(key int) {
+func (m *Model) deleteEntry(key Key) {
 	for i, e := range m.entries {
-		if e.K == key {
+		if e.K.Cmp(key) == 0 {
 			copy(m.entries[i:], m.entries[i+1:])
 			m.entries = m.entries[:len(m.entries)-1]
 		}
@@ -136,7 +142,7 @@ func TestModel(t *testing.T) {
 			for i := 0; i < N; i++ {
 				k := m.r.Intn(N)
 				v := m.r.Intn(N)
-				m.Insert(k, v)
+				m.Insert(intKey(k), v)
 			}
 		})
 	}
@@ -145,11 +151,11 @@ func TestModel(t *testing.T) {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
 			m := NewModel(t)
 			for i := 0; i < N; i++ {
-				m.Insert(i, struct{}{})
+				m.Insert(intKey(i), struct{}{})
 			}
 			for i := 0; i < N; i++ {
-				e := m.r.Intn(N)
-				m.Delete(e)
+				k := m.r.Intn(N)
+				m.Delete(intKey(k))
 			}
 		})
 	}
@@ -162,10 +168,10 @@ func TestModelGrowing(t *testing.T) {
 		if rand.Float64() < 0.7 { // skewed so the tree can grow
 			k := m.r.Intn(N)
 			v := m.r.Intn(N)
-			m.Insert(k, v)
+			m.Insert(intKey(k), v)
 		} else {
 			k := m.r.Intn(N)
-			m.Delete(k)
+			m.Delete(intKey(k))
 		}
 	}
 }

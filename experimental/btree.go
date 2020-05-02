@@ -4,7 +4,9 @@ import "fmt"
 
 const MAX = 5 // must be odd
 
-type Key = int
+type Key interface {
+	Cmp(Key) int
+}
 
 type Value interface{}
 
@@ -39,16 +41,17 @@ func (n *Node) Entries() []Entry {
 	return entries
 }
 
-func (n *Node) Get(key int) (value Value, ok bool) {
+func (n *Node) Get(key Key) (value Value, ok bool) {
 	finger := n
 OUTER:
 	for finger != nil {
 		for i := 0; i < int(finger.order); i++ {
 			entry := finger.entries[i]
-			if entry.K == key {
+			cmp := key.Cmp(entry.K)
+			if cmp == 0 {
 				return entry.V, true
 			}
-			if key < entry.K {
+			if cmp < 0 { // key < entry.K
 				finger = finger.subtrees[i]
 				continue OUTER
 			}
@@ -126,7 +129,7 @@ OUTER:
 					n.entries[i] = min
 					return
 				}
-				if key < n.entries[i].K {
+				if key.Cmp(n.entries[i].K) < 0 {
 					index = i
 					break
 				}
@@ -156,7 +159,7 @@ OUTER:
 			n.entries[n.order] = Entry{key, value}
 			n.order += 1
 			for i := int(n.order) - 1; i > 0; i-- {
-				if n.entries[i].K < n.entries[i-1].K {
+				if n.entries[i].K.Cmp(n.entries[i-1].K) < 0 {
 					n.entries[i], n.entries[i-1] = n.entries[i-1], n.entries[i]
 				} else {
 					break
@@ -166,7 +169,7 @@ OUTER:
 		}
 		index := 0
 		for i := 0; i < int(n.order); i++ {
-			if key > n.entries[i].K {
+			if key.Cmp(n.entries[i].K) > 0 {
 				index = i + 1
 			}
 		}
@@ -183,10 +186,11 @@ OUTER:
 			n.subtrees[index] = left
 			n.subtrees[index+1] = right
 			n.order += 1
-			if key < entry.K {
+			cmp := key.Cmp(entry.K)
+			if cmp < 0 {
 				n = left
 				continue OUTER
-			} else if key == entry.K {
+			} else if cmp == 0 {
 				n.entries[index].V = value
 				return
 			} else {

@@ -38,24 +38,24 @@ func BenchmarkComparison(b *testing.B) {
 			b.Run("btree", func(b *testing.B) {
 				var tree *Node
 				for i := 0; i < M; i++ {
-					tree = tree.Insert(i, struct{}{})
+					tree = tree.Insert(intKey(i), struct{}{})
 				}
 				b.Run("Get", func(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
-						tree.Get(5)
+						tree.Get(intKey(5))
 					}
 				})
 				b.Run("Insert", func(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
-						tree.Insert(M+1, struct{}{})
+						tree.Insert(intKey(M+1), struct{}{})
 					}
 				})
 				b.Run("Remove", func(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
-						tree.Remove(i % M)
+						tree.Remove(intKey(i % M))
 					}
 				})
 			})
