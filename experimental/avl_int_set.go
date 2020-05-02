@@ -1,5 +1,5 @@
 // DO NOT EDIT tis code was generated using go-ordmap code generation
-// go run github.com/edofic/go-ordmap/cmd/gen -name AvlIntSet -key int -less < -value struct{} -target ./avl_int_set.go -pkg ordmap
+// go run github.com/edofic/go-ordmap/cmd/gen -impl avl -name AvlIntSet -key int -less < -value struct{} -target ./avl_int_set.go -pkg ordmap
 package ordmap
 
 type AvlIntSetEntry struct {

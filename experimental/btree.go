@@ -17,17 +17,17 @@ type Entry struct {
 
 var zeroEntry Entry
 
-type Node struct {
+type OrdMap struct {
 	order    uint8 // 1..MAX
 	height   uint8
 	entries  [MAX]Entry
-	subtrees [MAX + 1]*Node
+	subtrees [MAX + 1]*OrdMap
 }
 
-func (n *Node) Entries() []Entry {
+func (n *OrdMap) Entries() []Entry {
 	entries := make([]Entry, 0) // TODO preallocate when Len is implemented
-	var step func(n *Node)
-	step = func(n *Node) {
+	var step func(n *OrdMap)
+	step = func(n *OrdMap) {
 		if n == nil {
 			return
 		}
@@ -41,7 +41,7 @@ func (n *Node) Entries() []Entry {
 	return entries
 }
 
-func (n *Node) Get(key Key) (value Value, ok bool) {
+func (n *OrdMap) Get(key Key) (value Value, ok bool) {
 	finger := n
 OUTER:
 	for finger != nil {
@@ -61,15 +61,15 @@ OUTER:
 	return value, false
 }
 
-func (n *Node) Insert(key Key, value Value) *Node {
+func (n *OrdMap) Insert(key Key, value Value) *OrdMap {
 	if n == nil {
-		n = &Node{order: 1, height: 1}
+		n = &OrdMap{order: 1, height: 1}
 		n.entries[0] = Entry{key, value}
 		return n
 	}
 	if n.order == MAX { // full root, need to split
 		left, entry, right := n.split()
-		n = &Node{
+		n = &OrdMap{
 			order:  1,
 			height: left.height + 1,
 		}
@@ -83,7 +83,7 @@ func (n *Node) Insert(key Key, value Value) *Node {
 	return n
 }
 
-func (n *Node) Remove(key Key) *Node {
+func (n *OrdMap) Remove(key Key) *OrdMap {
 	if _, ok := n.Get(key); !ok {
 		return n
 	}
@@ -95,7 +95,7 @@ func (n *Node) Remove(key Key) *Node {
 	return n
 }
 
-func (n *Node) Min() *Entry {
+func (n *OrdMap) Min() *Entry {
 	if n == nil {
 		return nil
 	}
@@ -107,7 +107,7 @@ func (n *Node) Min() *Entry {
 	}
 }
 
-func (n *Node) Max() *Entry {
+func (n *OrdMap) Max() *Entry {
 	if n == nil {
 		return nil
 	}
@@ -119,14 +119,14 @@ func (n *Node) Max() *Entry {
 	}
 }
 
-func (n *Node) Height() int {
+func (n *OrdMap) Height() int {
 	if n == nil {
 		return 0
 	}
 	return int(n.height)
 }
 
-func (n *Node) Iterate() Iterator {
+func (n *OrdMap) Iterate() Iterator {
 	i := Iterator{
 		stack: []iteratorStackFrame{{n, 0, 0}},
 	}
@@ -135,7 +135,7 @@ func (n *Node) Iterate() Iterator {
 }
 
 type iteratorStackFrame struct {
-	n     *Node
+	n     *OrdMap
 	state uint8 // 0 start, 1 leftmost done, 2 i-th entry done, 3 done
 	i     uint8
 }
@@ -181,12 +181,12 @@ LOOP:
 	}
 }
 
-// TODO func (n *Node) Len() int {}
-// TODO func (n *Node) IterateFrom(k Key) Iterator {}
-// TODO func (n *Node) IterateReverse() Iterator {}
-// TODO func (n *Node) IterateReverseFrom(k Key) Iterator {}
+// TODO func (n *OrdMap) Len() int {}
+// TODO func (n *OrdMap) IterateFrom(k Key) Iterator {}
+// TODO func (n *OrdMap) IterateReverse() Iterator {}
+// TODO func (n *OrdMap) IterateReverseFrom(k Key) Iterator {}
 
-func (n *Node) removeStepMut(key Key) {
+func (n *OrdMap) removeStepMut(key Key) {
 OUTER:
 	for {
 		if n.height == 1 {
@@ -237,7 +237,7 @@ OUTER:
 	}
 }
 
-func (n *Node) insertNonFullMut(key Key, value Value) {
+func (n *OrdMap) insertNonFullMut(key Key, value Value) {
 OUTER:
 	for {
 		for i := 0; i < int(n.order); i++ {
@@ -296,7 +296,7 @@ OUTER:
 	}
 }
 
-func (n *Node) ensureChildNotMinimal(index int) int {
+func (n *OrdMap) ensureChildNotMinimal(index int) int {
 	if n.subtrees[index].order > 1 {
 		return index
 	}
@@ -318,7 +318,7 @@ func (n *Node) ensureChildNotMinimal(index int) int {
 		} else { // right neighbour is minimal
 			child := n.subtrees[index]
 			neighbour := n.subtrees[1]
-			newChild := &Node{
+			newChild := &OrdMap{
 				order:  child.order + neighbour.order + 1,
 				height: child.height, // == neighbour.height
 			}
@@ -352,7 +352,7 @@ func (n *Node) ensureChildNotMinimal(index int) int {
 			neighbour.order -= 1
 			neighbour.entries[neighbour.order] = zeroEntry
 		} else {
-			newChild := &Node{
+			newChild := &OrdMap{
 				order:  child.order + neighbour.order + 1,
 				height: child.height, // == neighbour.height
 			}
@@ -373,9 +373,9 @@ func (n *Node) ensureChildNotMinimal(index int) int {
 	return index
 }
 
-func (n *Node) split() (left *Node, entry Entry, right *Node) {
+func (n *OrdMap) split() (left *OrdMap, entry Entry, right *OrdMap) {
 	entry = n.entries[(MAX-1)/2]
-	left = &Node{
+	left = &OrdMap{
 		order:  (MAX - 1) / 2,
 		height: n.height,
 	}
@@ -385,7 +385,7 @@ func (n *Node) split() (left *Node, entry Entry, right *Node) {
 	for i := 0; i <= (MAX-1)/2; i++ {
 		left.subtrees[i] = n.subtrees[i]
 	}
-	right = &Node{
+	right = &OrdMap{
 		order:  (MAX - 1) / 2,
 		height: n.height,
 	}
@@ -398,7 +398,7 @@ func (n *Node) split() (left *Node, entry Entry, right *Node) {
 	return
 }
 
-func (n *Node) popMinMut() Entry {
+func (n *OrdMap) popMinMut() Entry {
 OUTER:
 	for {
 		if n.height == 1 {
@@ -417,11 +417,11 @@ OUTER:
 	}
 }
 
-func (n Node) dup() *Node {
+func (n OrdMap) dup() *OrdMap {
 	return &n
 }
 
-func (n *Node) visual() string {
+func (n *OrdMap) visual() string {
 	if n == nil {
 		return "_"
 	}

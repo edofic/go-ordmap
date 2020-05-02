@@ -5,8 +5,7 @@ import (
 	"testing"
 )
 
-//go:generate go run github.com/edofic/go-ordmap/cmd/gen -name AvlIntSet -key int -less "<" -value struct{} -target ./avl_int_set.go -pkg ordmap
-// to benchmark against
+//go:generate go run github.com/edofic/go-ordmap/cmd/gen -impl avl  -name AvlIntSet -key int -less "<" -value struct{} -target ./avl_int_set.go -pkg ordmap
 
 func BenchmarkComparison(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
@@ -36,7 +35,7 @@ func BenchmarkComparison(b *testing.B) {
 				})
 			})
 			b.Run("btree", func(b *testing.B) {
-				var tree *Node
+				var tree *OrdMap
 				for i := 0; i < M; i++ {
 					tree = tree.Insert(intKey(i), struct{}{})
 				}

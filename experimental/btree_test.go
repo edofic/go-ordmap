@@ -29,7 +29,7 @@ func TestIntKey(t *testing.T) {
 
 type Model struct {
 	t       *testing.T
-	tree    *Node
+	tree    *OrdMap
 	entries []Entry
 	r       *rand.Rand
 }
@@ -53,8 +53,8 @@ func (m *Model) checkInvariants() {
 }
 
 func (m *Model) checkNodesValidity() {
-	var step func(*Node)
-	step = func(n *Node) {
+	var step func(*OrdMap)
+	step = func(n *OrdMap) {
 		if n == nil {
 			return
 		}
@@ -83,8 +83,8 @@ func (m *Model) checkNodesValidity() {
 }
 
 func (m *Model) checkBalance() {
-	var depth func(*Node) uint8
-	depth = func(n *Node) uint8 {
+	var depth func(*OrdMap) uint8
+	depth = func(n *OrdMap) uint8 {
 		if n == nil {
 			return 0
 		}
