@@ -187,7 +187,7 @@ OUTER:
 				n = left
 				continue OUTER
 			} else if key == entry.K {
-				// nothing to do
+				n.entries[index].V = value
 				return
 			} else {
 				n = right

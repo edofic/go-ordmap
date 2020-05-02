@@ -81,7 +81,7 @@ func (m *Model) checkBalance() {
 }
 
 func (m *Model) checkElements() {
-	require.Equal(m.t, m.entries, m.tree.Entries())
+	require.Equal(m.t, m.entries, m.tree.Entries(), m.tree.visual())
 }
 
 func (m *Model) Insert(key Key, value Value) {
@@ -152,5 +152,20 @@ func TestModel(t *testing.T) {
 				m.Delete(e)
 			}
 		})
+	}
+}
+
+func TestModelGrowing(t *testing.T) {
+	N := 200
+	m := NewModel(t)
+	for i := 0; i < N; i++ {
+		if rand.Float64() < 0.7 { // skewed so the tree can grow
+			k := m.r.Intn(N)
+			v := m.r.Intn(N)
+			m.Insert(k, v)
+		} else {
+			k := m.r.Intn(N)
+			m.Delete(k)
+		}
 	}
 }
