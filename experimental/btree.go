@@ -74,55 +74,62 @@ func (n *Node) Remove(key int) *Node {
 	if !n.Contains(key) {
 		return n
 	}
-	return n.removeStep(key)
+	if n.leaf && n.order == 1 && n.keys[0] == key {
+		return nil
+	}
+	n = n.dup()
+	n.removeStepMut(key)
+	return n
 }
 
-func (n *Node) removeStep(key int) *Node {
-	if n.leaf {
-		for i := 0; i < int(n.order); i++ {
-			if n.keys[i] == key {
-				n = n.dup()
-				copy(n.keys[i:], n.keys[i+1:])
-				n.keys[n.order-1] = 0
-				n.order -= 1
-				if n.order == 0 {
-					return nil
+func (n *Node) removeStepMut(key int) {
+OUTER:
+	for {
+		if n.leaf {
+			for i := 0; i < int(n.order); i++ {
+				if n.keys[i] == key {
+					//copy(n.keys[i:n.order-1], n.keys[i+1:n.order])
+					top := int(n.order) - 1
+					for j := i; j < top; j++ {
+						n.keys[j] = n.keys[j+1]
+					}
+					n.keys[n.order-1] = 0
+					n.order -= 1
+					return
 				}
-				return n
 			}
-		}
-		return n
-	} else {
-		n = n.dup()
-		index := int(n.order)
-		for i := 0; i < int(n.order); i++ {
-			if n.keys[i] == key {
-				index = n.ensureChildNotMinimal(i + 1)
-				if n.order == 0 { // degenerated, need to drop a level
-					return n.subtrees[0].removeStep(key)
+			return
+		} else {
+			index := int(n.order)
+			for i := 0; i < int(n.order); i++ {
+				if n.keys[i] == key { // inner delete
+					index = n.ensureChildNotMinimal(i + 1)
+					if n.order == 0 { // degenerated, need to drop a level
+						*n = *n.subtrees[0]
+						continue OUTER
+					}
+					if index != i+1 || n.keys[i] != key { // merge OR rotation
+						continue OUTER // easiest to try again
+					}
+					child, min := n.subtrees[index].popMin()
+					n.subtrees[i+1] = child
+					n.keys[i] = min
+					return
 				}
-				if index != i+1 { // merge happened
-					return n.removeStep(key) // easiest to try again
+				if key < n.keys[i] {
+					index = i
+					break
 				}
-				if n.keys[i] != key { // rotation happened
-					return n.removeStep(key) // easiest to try again
-				}
-				child, min := n.subtrees[index].popMin()
-				n.subtrees[i+1] = child
-				n.keys[i] = min
-				return n
 			}
-			if key < n.keys[i] {
-				index = i
-				break
+			index = n.ensureChildNotMinimal(index)
+			if n.order == 0 { // degenerated, need to drop a level
+				*n = *n.subtrees[0]
+				continue OUTER
 			}
+			n.subtrees[index] = n.subtrees[index].dup()
+			n = n.subtrees[index]
+			continue OUTER
 		}
-		index = n.ensureChildNotMinimal(index)
-		if n.order == 0 { // degenerated, need to drop a level
-			return n.subtrees[0].removeStep(key)
-		}
-		n.subtrees[index] = n.subtrees[index].removeStep(key)
-		return n
 	}
 }
 
