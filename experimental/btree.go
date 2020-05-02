@@ -88,7 +88,6 @@ OUTER:
 		if n.leaf {
 			for i := 0; i < int(n.order); i++ {
 				if n.keys[i] == key {
-					//copy(n.keys[i:n.order-1], n.keys[i+1:n.order])
 					top := int(n.order) - 1
 					for j := i; j < top; j++ {
 						n.keys[j] = n.keys[j+1]
@@ -111,8 +110,9 @@ OUTER:
 					if index != i+1 || n.keys[i] != key { // merge OR rotation
 						continue OUTER // easiest to try again
 					}
-					child, min := n.subtrees[index].popMin()
-					n.subtrees[i+1] = child
+					child := n.subtrees[index].dup()
+					min := child.popMinMut()
+					n.subtrees[index] = child
 					n.keys[i] = min
 					return
 				}
@@ -287,22 +287,23 @@ func (n *Node) split() (left *Node, key int, right *Node) {
 	return
 }
 
-func (n *Node) popMin() (nn *Node, res int) {
-	if n.order == 1 {
-		panic("popping from minimal")
+func (n *Node) popMinMut() int {
+OUTER:
+	for {
+		if n.leaf {
+			k := n.keys[0]
+			for i := 1; i < int(n.order); i++ {
+				n.keys[i-1] = n.keys[i]
+			}
+			n.order -= 1
+			n.keys[n.order] = 0
+			return k
+		}
+		_ = n.ensureChildNotMinimal(0)
+		n.subtrees[0] = n.subtrees[0].dup()
+		n = n.subtrees[0]
+		continue OUTER
 	}
-	n = n.dup()
-	if n.leaf {
-		k := n.keys[0]
-		copy(n.keys[:], n.keys[1:])
-		n.order -= 1
-		n.keys[n.order] = 0
-		return n, k
-	}
-	_ = n.ensureChildNotMinimal(0)
-	child, min := n.subtrees[0].popMin()
-	n.subtrees[0] = child
-	return n, min
 }
 
 func (n Node) dup() *Node {
