@@ -134,8 +134,9 @@ func TestModel(t *testing.T) {
 		t.Run(fmt.Sprintf("insert_%03d", N), func(t *testing.T) {
 			m := NewModel(t)
 			for i := 0; i < N; i++ {
-				e := m.r.Intn(N)
-				m.Insert(e, struct{}{})
+				k := m.r.Intn(N)
+				v := m.r.Intn(N)
+				m.Insert(k, v)
 			}
 		})
 	}

@@ -148,6 +148,7 @@ OUTER:
 	for {
 		for i := 0; i < int(n.order); i++ {
 			if n.entries[i].K == key {
+				n.entries[i].V = value
 				return
 			}
 		}
