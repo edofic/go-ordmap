@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	impl := flag.String("impl", "avl", "Which backing tree implementation to use: avl / btree")
 	pkg := flag.String("pkg", "main", "Package name to use for generated code")
 	name := flag.String("name", "OrdMap", "Name of the generated type")
 	key := flag.String("key", "Key", "Name of the key type to use")
@@ -23,7 +24,17 @@ func main() {
 	doFmt := flag.Bool("fmt", true, "Run `go fmt` on the generated files")
 	flag.Parse()
 
-	code := string(avl())
+	var code string
+	switch *impl {
+	case "avl":
+		code = string(avl())
+	case "btree":
+		code = string(btree())
+	default:
+		fmt.Println("Seleted unknown implementation:", *impl)
+		flag.PrintDefaults()
+		return
+	}
 	replace(&code, `package ordmap`, "package "+(*pkg))
 	replace(&code, `\bKey\b`, *key)
 	replace(&code, `\bValue\b`, *value)
