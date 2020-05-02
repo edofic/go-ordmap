@@ -25,7 +25,7 @@ type Node struct {
 }
 
 func (n *Node) Entries() []Entry {
-	entries := make([]Entry, 0)
+	entries := make([]Entry, 0) // TODO preallocate when Len is implemented
 	var step func(n *Node)
 	step = func(n *Node) {
 		if n == nil {
@@ -126,8 +126,62 @@ func (n *Node) Height() int {
 	return int(n.height)
 }
 
+func (n *Node) Iterate() Iterator {
+	i := Iterator{
+		stack: []iteratorStackFrame{{n, 0, 0}},
+	}
+	i.Next()
+	return i
+}
+
+type iteratorStackFrame struct {
+	n     *Node
+	state uint8 // 0 start, 1 leftmost done, 2 i-th entry done, 3 done
+	i     uint8
+}
+type Iterator struct {
+	stack []iteratorStackFrame
+	done  bool
+	Entry Entry
+}
+
+func (i *Iterator) Done() bool {
+	return i.done
+}
+
+func (i *Iterator) Next() {
+	i.done = true
+LOOP:
+	for len(i.stack) > 0 {
+		f := &i.stack[len(i.stack)-1]
+		switch f.state {
+		case 0:
+			if f.n == nil {
+				i.stack = i.stack[:len(i.stack)-1]
+				continue LOOP
+			}
+			f.state = 1
+			i.stack = append(i.stack, iteratorStackFrame{f.n.subtrees[0], 0, 0})
+		case 1:
+			if f.i < f.n.order {
+				f.state = 2
+				i.Entry = f.n.entries[f.i]
+				i.done = false
+				break LOOP
+			} else {
+				f.state = 3
+			}
+		case 2:
+			f.i += 1
+			f.state = 1
+			i.stack = append(i.stack, iteratorStackFrame{f.n.subtrees[f.i], 0, 0})
+		default:
+			i.stack = i.stack[:len(i.stack)-1]
+		}
+	}
+}
+
 // TODO func (n *Node) Len() int {}
-// TODO func (n *Node) Iterate() Iterator {}
 // TODO func (n *Node) IterateFrom(k Key) Iterator {}
 // TODO func (n *Node) IterateReverse() Iterator {}
 // TODO func (n *Node) IterateReverseFrom(k Key) Iterator {}

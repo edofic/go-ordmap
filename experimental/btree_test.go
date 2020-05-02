@@ -49,6 +49,7 @@ func (m *Model) checkInvariants() {
 	m.checkBalance()
 	m.checkElements()
 	m.checkMinMax()
+	m.checkIterator()
 }
 
 func (m *Model) checkNodesValidity() {
@@ -99,6 +100,14 @@ func (m *Model) checkBalance() {
 
 func (m *Model) checkElements() {
 	require.Equal(m.t, m.entries, m.tree.Entries(), m.tree.visual())
+}
+
+func (m *Model) checkIterator() {
+	entries := make([]Entry, 0, len(m.entries))
+	for i := m.tree.Iterate(); !i.Done(); i.Next() {
+		entries = append(entries, i.Entry)
+	}
+	require.Equal(m.t, m.entries, entries)
 }
 
 func (m *Model) checkMinMax() {
