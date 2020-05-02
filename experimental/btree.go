@@ -252,6 +252,7 @@ func (n *Node) ensureChildNotMinimal(index int) int {
 			child.entries[0] = n.entries[index-1]
 			child.subtrees[0] = neighbour.subtrees[neighbour.order]
 			n.entries[index-1] = neighbour.entries[neighbour.order-1]
+			neighbour.subtrees[neighbour.order] = nil
 			neighbour.order -= 1
 			neighbour.entries[neighbour.order] = zeroEntry
 		} else {

@@ -42,7 +42,7 @@ func (m *Model) checkNodesValidity() {
 		require.LessOrEqual(m.t, n.order, uint8(MAX))
 		for i := int(n.order); i < len(n.entries); i++ {
 			require.Equal(m.t, zeroEntry, n.entries[i], fmt.Sprintf("%s: %d %v", n.visual(), n.order, n.entries))
-			//require.Nil(m.t, n.subtrees[i+1])
+			require.Nil(m.t, n.subtrees[i+1])
 		}
 		children := 0
 		for i := 0; i <= int(n.order); i++ {
