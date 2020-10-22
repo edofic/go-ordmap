@@ -33,7 +33,7 @@ func main() {
 	replace(&code, `\b\.Less\b`, *less)
 
 	buf := bytes.NewBuffer([]byte{})
-	fmt.Fprintln(buf, "// DO NOT EDIT tis code was generated using go-ordmap code generation")
+	fmt.Fprintln(buf, "// DO NOT EDIT this code was generated using go-ordmap code generation")
 	fmt.Fprintln(buf, "// go run github.com/edofic/go-ordmap/cmd/gen "+strings.Join(os.Args[1:], " "))
 	buf.WriteString(code)
 

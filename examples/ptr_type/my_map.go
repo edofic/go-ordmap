@@ -1,4 +1,4 @@
-// DO NOT EDIT tis code was generated using go-ordmap code generation
+// DO NOT EDIT this code was generated using go-ordmap code generation
 // go run github.com/edofic/go-ordmap/cmd/gen -name MyMap -key int -less < -value *MyValue -target ./my_map.go
 package main
 
