@@ -35,6 +35,7 @@ func main() {
 	buf := bytes.NewBuffer([]byte{})
 	fmt.Fprintln(buf, "// DO NOT EDIT this code was generated using go-ordmap code generation")
 	fmt.Fprintln(buf, "// go run github.com/edofic/go-ordmap/cmd/gen "+strings.Join(os.Args[1:], " "))
+	fmt.Fprintln(buf, "//lint:file-ignore ST1000 ignore problems in generated code")
 	buf.WriteString(code)
 
 	err := ioutil.WriteFile(*target, buf.Bytes(), 0644)
