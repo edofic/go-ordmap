@@ -181,11 +181,16 @@ func TestModelRandom(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	var tree *OrdMap
+
+	value, ok := tree.Get(intKey(0))
+	require.False(t, ok)
+	require.Nil(t, value)
+
 	tree = tree.Insert(intKey(1), "foo")
 	tree = tree.Insert(intKey(2), "bar")
 	tree = tree.Insert(intKey(0), "bar")
 
-	value, ok := tree.Get(intKey(1))
+	value, ok = tree.Get(intKey(1))
 	require.True(t, ok)
 	require.Equal(t, "foo", value)
 

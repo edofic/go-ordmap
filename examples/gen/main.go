@@ -28,6 +28,8 @@ func main() {
 
 	// can use another map of different type in the same package
 	var m2 *IntIntMap
+	v, ok := m2.Get(0)
+	fmt.Println("wat", v, ok)
 	m2 = m2.Insert(1, 1) // this one has "raw" ints for keys
 	m2 = m2.Insert(2, 3) // in order to support this you will also need to pass
 	m2 = m2.Insert(2, 2) // `-less "<"` to the genreeator in order to use

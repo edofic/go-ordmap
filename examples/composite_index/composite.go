@@ -14,11 +14,11 @@ type Index struct {
 	children   [2]*Index
 }
 
-func (n *Index) Height() int {
-	if n == nil {
+func (node *Index) Height() int {
+	if node == nil {
 		return 0
 	}
-	return n.h
+	return node.h
 }
 
 // suffix Index is needed because this will get specialised in codegen

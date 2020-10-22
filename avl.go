@@ -12,11 +12,11 @@ type OrdMap struct {
 	children [2]*OrdMap
 }
 
-func (n *OrdMap) Height() int {
-	if n == nil {
+func (node *OrdMap) Height() int {
+	if node == nil {
 		return 0
 	}
-	return n.h
+	return node.h
 }
 
 // suffix _OrdMap is needed because this will get specialised in codegen

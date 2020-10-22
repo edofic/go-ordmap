@@ -14,11 +14,11 @@ type MyMap struct {
 	children   [2]*MyMap
 }
 
-func (n *MyMap) Height() int {
-	if n == nil {
+func (node *MyMap) Height() int {
+	if node == nil {
 		return 0
 	}
-	return n.h
+	return node.h
 }
 
 // suffix MyMap is needed because this will get specialised in codegen

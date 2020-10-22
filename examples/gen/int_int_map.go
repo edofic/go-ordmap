@@ -14,11 +14,11 @@ type IntIntMap struct {
 	children       [2]*IntIntMap
 }
 
-func (n *IntIntMap) Height() int {
-	if n == nil {
+func (node *IntIntMap) Height() int {
+	if node == nil {
 		return 0
 	}
-	return n.h
+	return node.h
 }
 
 // suffix IntIntMap is needed because this will get specialised in codegen
