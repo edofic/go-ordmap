@@ -39,7 +39,8 @@ your `.go` files
 //go:generate go run github.com/edofic/go-ordmap/cmd/gen -name IntStrMap -key intKey -value string -target ./int_str_map.go
 ```
 
-*NOTE* this uses `go run` to directly run a package - this requires Go 1.13+. If you're using an older version then `go get) the `gen` command or use any other dependency managment tool of your choice.
+*NOTE* go-ormap uses `go:embed` internally so this requires at least Go 1.16
+(otherwise you will get a compilation failure)
 
 And run `go generate ./...`  ([more about generation](https://blog.golang.org/generate))
 
@@ -88,7 +89,9 @@ for a fully functioning example.
 
 ### Using raw version
 
-If for some reason you don't want to use code generation you can directly use the template implementation. This less efficient and less safe as it uses an interface for keys and an empty interface for values.
+If for some reason you don't want to use code generation you can directly use
+the template implementation. This less efficient and less safe as it uses an
+interface for keys and an empty interface for values.
 
 ```go
 import "github.com/edofic/go-ordmap"
@@ -125,11 +128,12 @@ for a fully functioning example.
 
 ## Development
 
-Go 1.13+ recommended.
+Go 1.16+ required due to use of `go:embed`.
 
 ### Generation
 
-Code generation tool embeds the template code via code generation itself. So if you're changing the template `avl.go` make sure to run `go generate ./...` twice - or first generate commands then examples.
+If you're changing the template `avl.go` make sure to run `go generate ./...` to
+update generated code in examples.
 
 ### Testing
 

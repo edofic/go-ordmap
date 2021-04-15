@@ -1,10 +1,10 @@
-//go:generate go run ../../internal/pack/main.go -source ../../avl.go -name template -dest template.go
 package main
 
 import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/edofic/go-ordmap"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -22,7 +22,7 @@ func main() {
 	doFmt := flag.Bool("fmt", true, "Run `go fmt` on the generated files")
 	flag.Parse()
 
-	code := string(template())
+	code := ordmap.Template
 	replace(&code, `package ordmap`, "package "+(*pkg))
 	replace(&code, `\bKey\b`, *key)
 	replace(&code, `\bValue\b`, *value)
