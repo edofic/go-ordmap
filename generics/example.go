@@ -1,9 +1,6 @@
-// https://go2goplay.golang.org/
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type i int
 
@@ -155,31 +152,32 @@ func (node *OrdMap[K, V]) Len() int {
 	return node.len
 }
 
+type entriesFrame[K Lesser[K], V any] struct {
+	node     *OrdMap[K, V]
+	leftDone bool
+}
+
 func (node *OrdMap[K, V]) Entries() []Entry[K, V] {
 	elems := make([]Entry[K, V], 0, node.Len())
 	if node == nil {
 		return elems
 	}
-	type frame struct {
-		node     *OrdMap[K, V]
-		leftDone bool
-	}
-	var preallocated [20]frame // preallocate on stack for common case
+	var preallocated [20]entriesFrame[K, V] // preallocate on stack for common case
 	stack := preallocated[:0]
-	stack = append(stack, frame{node, false})
+	stack = append(stack, entriesFrame[K, V]{node, false})
 	for len(stack) > 0 {
 		top := &stack[len(stack)-1]
 
 		if !top.leftDone {
 			if top.node.children[0] != nil {
-				stack = append(stack, frame{top.node.children[0], false})
+				stack = append(stack, entriesFrame[K, V]{top.node.children[0], false})
 			}
 			top.leftDone = true
 		} else {
 			stack = stack[:len(stack)-1] // pop
 			elems = append(elems, top.node.Entry)
 			if top.node.children[1] != nil {
-				stack = append(stack, frame{top.node.children[1], false})
+				stack = append(stack, entriesFrame[K, V]{top.node.children[1], false})
 			}
 		}
 	}
@@ -206,6 +204,7 @@ func (node *OrdMap[K, V]) Max() *Entry[K, V] {
 }
 
 func main() {
+	fmt.Println("hello")
 	var m1 *OrdMap[i, string] // zero value is the empty map
 	fmt.Println(m1.Entries())
 	m1 = m1.Insert(1, "foo") // adding entries
