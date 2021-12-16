@@ -76,15 +76,11 @@ type TreeModel struct {
 	debug bool
 }
 
-func compareInt(n, m int) bool {
-	return n < m
-}
-
 func NewTreeModel(t *testing.T) *TreeModel {
 	return &TreeModel{
 		t:     t,
 		elems: make([]Entry[int, int], 0),
-		tree:  NewOrdMap[int, int](compareInt),
+		tree:  NewOrdMap[int, int](CompareOrdered[int]),
 		debug: false, // toggle this for verbose tests
 	}
 }
@@ -196,7 +192,7 @@ func TestModelRandom(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	tree := NewOrdMap[int, string](compareInt)
+	tree := NewOrdMap[int, string](CompareOrdered[int])
 
 	value, ok := tree.Get(0)
 	require.False(t, ok)
@@ -220,7 +216,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestMinMax(t *testing.T) {
-	tree := NewOrdMap[int, string](compareInt)
+	tree := NewOrdMap[int, string](CompareOrdered[int])
 	require.Nil(t, tree.Min())
 	require.Nil(t, tree.Max())
 
@@ -233,7 +229,7 @@ func TestMinMax(t *testing.T) {
 }
 
 func TestRemoveMissing(t *testing.T) {
-	tree := NewOrdMap[int, string](compareInt)
+	tree := NewOrdMap[int, string](CompareOrdered[int])
 	tree = tree.Insert(1, "foo")
 	tree = tree.Insert(2, "bar")
 	require.Equal(t, 2, tree.Len())
@@ -242,7 +238,7 @@ func TestRemoveMissing(t *testing.T) {
 }
 
 func TestIteratorEmpty(t *testing.T) {
-	tree := NewOrdMap[int, string](compareInt)
+	tree := NewOrdMap[int, string](CompareOrdered[int])
 	count := 0
 	for iter := tree.Iterate(); !iter.Done(); iter.Next() {
 		count += 1
@@ -251,7 +247,7 @@ func TestIteratorEmpty(t *testing.T) {
 }
 
 func TestIterator(t *testing.T) {
-	tree := NewOrdMap[int, int](compareInt)
+	tree := NewOrdMap[int, int](CompareOrdered[int])
 	N := 100
 	for i := 0; i < N; i++ {
 		tree = tree.Insert(i, i)
@@ -273,7 +269,7 @@ func TestIterator(t *testing.T) {
 }
 
 func TestIteratorReverse(t *testing.T) {
-	tree := NewOrdMap[int, int](compareInt)
+	tree := NewOrdMap[int, int](CompareOrdered[int])
 	N := 100
 	for i := 0; i < N; i++ {
 		tree = tree.Insert(i, i)
@@ -292,7 +288,7 @@ func TestIteratorReverse(t *testing.T) {
 }
 
 func TestIterateFrom(t *testing.T) {
-	tree := NewOrdMap[int, int](compareInt)
+	tree := NewOrdMap[int, int](CompareOrdered[int])
 	N := 100
 	for i := 0; i < N; i++ {
 		tree = tree.Insert(i, i)
@@ -358,7 +354,7 @@ func TestIterateFrom(t *testing.T) {
 }
 
 func TestEmptyLen(t *testing.T) {
-	require.Equal(t, 0, NewOrdMap[int, int](compareInt).Len())
+	require.Equal(t, 0, NewOrdMap[int, int](CompareOrdered[int]).Len())
 }
 
 func BenchmarkMap(b *testing.B) {
@@ -380,7 +376,7 @@ func BenchmarkMap(b *testing.B) {
 func BenchmarkTree(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
-			tree := NewOrdMap[int, int](compareInt)
+			tree := NewOrdMap[int, int](CompareOrdered[int])
 			for i := 0; i < M; i++ {
 				tree = tree.Insert(i, i)
 			}

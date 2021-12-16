@@ -3,6 +3,8 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/edofic/go-ordmap"
 )
 
 type MyValue struct {
@@ -10,7 +12,7 @@ type MyValue struct {
 }
 
 func main() {
-	var m *MyMap
+	m := ordmap.NewOrdMap[int, *MyValue](ordmap.CompareOrdered[int])
 	m = m.Insert(1, &MyValue{1})
 	m = m.Insert(2, &MyValue{2})
 	m = m.Insert(2, &MyValue{2})
