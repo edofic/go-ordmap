@@ -1,4 +1,3 @@
-//go:generate go run github.com/edofic/go-ordmap/cmd/gen -name Index -key CompositeKey -value bool -target ./composite.go
 package main
 
 import (
@@ -24,7 +23,7 @@ func compareCompositeKey(c1, c2 CompositeKey) bool {
 
 func main() {
 	// can be used as a sql table (user, preference, is_set) with a composite index on (user, preference)
-	preferences := ordmap.NewOrdMap[CompositeKey, bool](compareCompositeKey)
+	preferences := ordmap.New[CompositeKey, bool](compareCompositeKey)
 	preferences = preferences.Insert(CompositeKey{2, 3}, true)
 	preferences = preferences.Insert(CompositeKey{1, 1}, true)
 	preferences = preferences.Insert(CompositeKey{2, 1}, false)

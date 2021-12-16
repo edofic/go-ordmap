@@ -1,11 +1,23 @@
 package ordmap
 
+
+type Ordered interface {
+        ~int | ~int8 | ~int16 | ~int32 | ~int64 |
+                ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
+                ~float32 | ~float64 |
+                ~string
+}
+
+func Less[T Ordered](v1, v2 T) bool {
+        return v1 < v2
+}
+
 type OrdMap[K, V any] struct {
 	compare func(K, K) bool
 	root    *node[K, V]
 }
 
-func NewOrdMap[K, V any](compare func(K, K) bool) OrdMap[K, V] {
+func New[K, V any](compare func(K, K) bool) OrdMap[K, V] {
 	return OrdMap[K, V]{compare, nil}
 }
 

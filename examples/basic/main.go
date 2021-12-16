@@ -1,5 +1,3 @@
-//go:generate go run github.com/edofic/go-ordmap/cmd/gen -name IntStrMap -key intKey -value string -target ./int_str_map.go
-//go:generate go run github.com/edofic/go-ordmap/cmd/gen -name IntIntMap -key int -less "<" -value int -target ./int_int_map.go
 package main
 
 import (
@@ -9,7 +7,7 @@ import (
 )
 
 func main() {
-	m1 := ordmap.NewOrdMap[int, string](ordmap.CompareOrdered[int])
+	m1 := ordmap.New[int, string](ordmap.Less[int])
 
 	m1 = m1.Insert(1, "foo") // adding entries
 	m1 = m1.Insert(2, "baz")
@@ -24,7 +22,7 @@ func main() {
 	fmt.Println(m1.Entries()) // or get a slice of all of them
 
 	// can use another map of different type in the same package
-	m2 := ordmap.NewOrdMap[int, int](ordmap.CompareOrdered[int])
+	m2 := ordmap.New[int, int](ordmap.Less[int])
 	v, ok := m2.Get(0)
 	fmt.Println("wat", v, ok)
 	m2 = m2.Insert(1, 1) // this one has "raw" ints for keys

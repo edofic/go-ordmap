@@ -1,4 +1,3 @@
-//go:generate go run github.com/edofic/go-ordmap/cmd/gen -name MyMap -key int -less "<" -value *MyValue -target ./my_map.go
 package main
 
 import (
@@ -12,7 +11,7 @@ type MyValue struct {
 }
 
 func main() {
-	m := ordmap.NewOrdMap[int, *MyValue](ordmap.CompareOrdered[int])
+	m := ordmap.New[int, *MyValue](ordmap.Less[int])
 	m = m.Insert(1, &MyValue{1})
 	m = m.Insert(2, &MyValue{2})
 	m = m.Insert(2, &MyValue{2})
