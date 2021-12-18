@@ -30,7 +30,7 @@ In order to facilitate safe API and efficient internalization the this module ue
 ## Usage
 
 ```sh
-go1.18beta1 get github.com/edofic/go-ordmap/v2@ef7c960e
+go get github.com/edofic/go-ordmap/v2@v2.0.0-beta1
 ```
 
 You only need to remember to always assign the returned value of all
