@@ -33,7 +33,7 @@ In order to facilitate safe API and efficient internalization the this module ue
 ## Usage
 
 ```sh
-go get github.com/edofic/go-ordmap/v2@v2.0.0-beta1
+go get github.com/edofic/go-ordmap/v2@v2.0.0-beta2
 ```
 
 You only need to remember to always assign the returned value of all
@@ -49,7 +49,8 @@ import (
 )
 
 func main() {
-	m1 := ordmap.New[int, string](ordmap.Less[int])
+	m1 := ordmap.NewBuiltin[int, string]()
+
 	m1 = m1.Insert(1, "foo") // adding entries
 	m1 = m1.Insert(2, "baz")
 	m1 = m1.Insert(2, "bar") // will override
@@ -59,24 +60,34 @@ func main() {
 	for i := m1.Iterate(); !i.Done(); i.Next() {
 		fmt.Println(i.GetKey(), i.GetValue())
 	}
-	m1 = m1.Remove(1) // can also remove entries
+	m1 = m1.Remove(1)         // can also remove entries
 	fmt.Println(m1.Entries()) // or get a slice of all of them
+
+	// can use another map of different type in the same package
+	m2 := ordmap.NewBuiltin[int, int]()
+	v, ok := m2.Get(0)
+	fmt.Println("wat", v, ok)
+	m2 = m2.Insert(1, 1) // this one has "raw" ints for keys
+	m2 = m2.Insert(2, 3) // in order to support this you will also need to pass
+	m2 = m2.Insert(2, 2) // `-less "<"` to the genreeator in order to use
+	m2 = m2.Insert(3, 3) // native comparator
 	// can iterate in reverse as well
-	for i := m1.IterateReverse(); !i.Done(); i.Next() {
+	for i := m2.IterateReverse(); !i.Done(); i.Next() {
 		fmt.Println(i.GetKey(), i.GetValue())
 	}
-	fmt.Println(m1.Min(), m1.Max()) // access the extremes
+	fmt.Println(m2.Min(), m2.Max()) // access the extremes
 }
 ```
 
 See [examples](https://github.com/edofic/go-ordmap/blob/v2/examples) for more.
 
-You will need to provide the `Less` function - so the map knows how to order
-itself. There is a generic `ordmap.Less` function that is available for all types that support the `<` operator, but for custom types you will need to provide your own, e.g.
+You will need to provide the `Less` method on your  - so the map knows how to
+order itself. Or if you want to use one of the builtin types (e.g. `int`) you
+can use `NewBulitin` which only takes supported types.`
 
 ```go
-func compareMyKey(k1, k2 MyKey) bool {
-    return k1.v < k2.v
+func (k MyKey) Less(k2 MyKey) bool {
+    ...
 }
 ```
 

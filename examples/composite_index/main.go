@@ -11,7 +11,7 @@ type CompositeKey struct {
 	Preference int
 }
 
-func compareCompositeKey(c1, c2 CompositeKey) bool {
+func (c1 CompositeKey) Less(c2 CompositeKey) bool {
 	if c1.User < c2.User {
 		return true
 	}
@@ -23,7 +23,7 @@ func compareCompositeKey(c1, c2 CompositeKey) bool {
 
 func main() {
 	// can be used as a sql table (user, preference, is_set) with a composite index on (user, preference)
-	preferences := ordmap.New[CompositeKey, bool](compareCompositeKey)
+	preferences := ordmap.New[CompositeKey, bool]()
 	preferences = preferences.Insert(CompositeKey{2, 3}, true)
 	preferences = preferences.Insert(CompositeKey{1, 1}, true)
 	preferences = preferences.Insert(CompositeKey{2, 1}, false)

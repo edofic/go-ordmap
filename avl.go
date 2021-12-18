@@ -1,93 +1,135 @@
 package ordmap
 
+type Comparable[A any] interface {
+	Less(A) bool
+}
 
-type Ordered interface {
+
+type BuiltinComparable interface {
         ~int | ~int8 | ~int16 | ~int32 | ~int64 |
                 ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr |
                 ~float32 | ~float64 |
                 ~string
 }
 
-func Less[T Ordered](v1, v2 T) bool {
-        return v1 < v2
+type Builtin[A BuiltinComparable] struct {
+	value A
 }
 
-type OrdMap[K, V any] struct {
-	compare func(K, K) bool
-	root    *node[K, V]
+func (b Builtin[A]) Less(b2 Builtin[A]) bool{
+	return b.value < b2.value
 }
 
-func New[K, V any](compare func(K, K) bool) OrdMap[K, V] {
-	return OrdMap[K, V]{compare, nil}
+func New[K Comparable[K], V any]() *Node[K, V] {
+	return nil
 }
 
-func (o OrdMap[K, V]) Get(key K) (value V, ok bool) {
-	return o.root.get(key, o.compare)
+func NewBuiltin[K BuiltinComparable, V any]() NodeBuiltin[K, V] {
+	return NodeBuiltin[K, V]{nil}
 }
 
-func (o OrdMap[K, V]) Insert(key K, value V) OrdMap[K, V] {
-	return OrdMap[K, V]{o.compare, o.root.insert(key, value, o.compare)}
-}
-
-func (o OrdMap[K, V]) Remove(key K) OrdMap[K, V] {
-	return OrdMap[K, V]{o.compare, o.root.remove(key, o.compare)}
-}
-
-func (o OrdMap[K, V]) Entries() []Entry[K, V] {
-	return o.root.entries()
-}
-
-func (o OrdMap[K, V]) Len() int {
-	if o.root == nil {
-		return 0
-	}
-	return o.root.len
-}
-
-func (o OrdMap[K, V]) Min() *Entry[K, V] {
-	return o.root.Min()
-}
-
-func (o OrdMap[K, V]) Max() *Entry[K, V] {
-	return o.root.Max()
-}
-
-func (o OrdMap[K, V]) Iterate() Iterator[K, V] {
-	return newIterator[K, V](o, 0, nil)
-}
-
-func (o OrdMap[K, V]) IterateFrom(k K) Iterator[K, V] {
-	return newIterator(o, 0, &k)
-}
-
-func (o OrdMap[K, V]) IterateReverse() Iterator[K, V] {
-	return newIterator(o, 1, nil)
-}
-
-func (o OrdMap[K, V]) IterateReverseFrom(k K) Iterator[K, V] {
-	return newIterator(o, 1, &k)
-}
 
 type Entry[K, V any] struct {
 	K K
 	V V
 }
 
-type node[K, V any] struct {
+type NodeBuiltin[K BuiltinComparable, V any] struct {
+	n *Node[Builtin[K], V]
+}
+
+func (n NodeBuiltin[K, V]) Get(key K) (value V, ok bool) {
+	return n.n.Get(Builtin[K]{key})
+}
+
+func (n NodeBuiltin[K, V]) Insert(key K, value V) NodeBuiltin[K, V] {
+	return NodeBuiltin[K,V]{n.n.Insert(Builtin[K]{key}, value)}
+}
+
+func (n NodeBuiltin[K, V]) Remove(key K) NodeBuiltin[K, V] {
+	return NodeBuiltin[K,V]{n.n.Remove(Builtin[K]{key})}
+}
+
+func (n NodeBuiltin[K, V]) Len() int {
+	return n.n.Len()
+}
+
+func (n NodeBuiltin[K, V]) Entries() []Entry[K, V] {
+	baseEntries := n.n.Entries()
+	// TODO can this be unsafely cast?
+	entries := make([]Entry[K, V], len(baseEntries))
+	for i, e := range baseEntries  {
+		entries[i] = Entry[K, V]{e.K.value, e.V}
+	}
+	return entries
+}
+
+func (n NodeBuiltin[K, V]) Min() *Entry[K, V] {
+	e := n.n.Min()
+	if e == nil {
+		return nil
+	}
+	return &Entry[K,V]{e.K.value, e.V}
+}
+func (n NodeBuiltin[K, V]) Max() *Entry[K, V] {
+	e := n.n.Max()
+	if e == nil {
+		return nil
+	}
+	return &Entry[K,V]{e.K.value, e.V}
+}
+
+func (n NodeBuiltin[K, V]) Iterate() IteratorBuiltin[K, V] {
+	return IteratorBuiltin[K,V]{n.n.Iterate()}
+}
+
+func (n NodeBuiltin[K, V]) IterateFrom(k K) IteratorBuiltin[K, V] {
+	return IteratorBuiltin[K,V]{n.n.IterateFrom(Builtin[K]{k})}
+}
+
+func (n NodeBuiltin[K, V]) IterateReverse() IteratorBuiltin[K, V] {
+	return IteratorBuiltin[K,V]{n.n.IterateReverse()}
+}
+
+func (n NodeBuiltin[K, V]) IterateReverseFrom(k K) IteratorBuiltin[K, V] {
+	return IteratorBuiltin[K,V]{n.n.IterateReverseFrom(Builtin[K]{k})}
+}
+
+type IteratorBuiltin[K BuiltinComparable, V any] struct {
+	i Iterator[Builtin[K], V]
+}
+
+func (i *IteratorBuiltin[K, V]) Done() bool {
+	return i.i.Done()
+}
+
+func (i *IteratorBuiltin[K, V]) Next() {
+	i.i.Done()
+}
+
+func (i *IteratorBuiltin[K, V]) GetKey() K {
+	return i.i.GetKey().value
+}
+
+func (i *IteratorBuiltin[K, V]) GetValue() V {
+	return i.i.GetValue()
+}
+
+type Node[K Comparable[K], V any] struct {
 	entry    Entry[K, V]
 	h        int
 	len      int
-	children [2]*node[K, V]
+	children [2]*Node[K, V]
 }
 
-func (node *node[K, V]) height() int {
+func (node *Node[K, V]) height() int {
 	if node == nil {
 		return 0
 	}
 	return node.h
 }
 
-func combinedDepth[K, V any](n1, n2 *node[K, V]) int {
+func combinedDepth[K Comparable[K], V any](n1, n2 *Node[K, V]) int {
 	d1 := n1.height()
 	d2 := n2.height()
 	var d int
@@ -99,7 +141,7 @@ func combinedDepth[K, V any](n1, n2 *node[K, V]) int {
 	return d + 1
 }
 
-func mk_OrdMap[K, V any](entry Entry[K, V], left, right *node[K, V]) *node[K, V] {
+func mk_OrdMap[K Comparable[K], V any](entry Entry[K, V], left, right *Node[K, V]) *Node[K, V] {
 	len := 1
 	if left != nil {
 		len += left.len
@@ -107,24 +149,24 @@ func mk_OrdMap[K, V any](entry Entry[K, V], left, right *node[K, V]) *node[K, V]
 	if right != nil {
 		len += right.len
 	}
-	return &node[K, V]{
+	return &Node[K, V]{
 		entry:    entry,
 		h:        combinedDepth(left, right),
 		len:      len,
-		children: [2]*node[K, V]{left, right},
+		children: [2]*Node[K, V]{left, right},
 	}
 }
 
-func (node *node[K, V]) get(key K, compare func(K, K) bool) (value V, ok bool) {
+func (node *Node[K, V]) Get(key K) (value V, ok bool) {
 	finger := node
 	for {
 		if finger == nil {
 			ok = false
 			return // using named returns so we keep the zero value for `value`
 		}
-		if compare(key, finger.entry.K) {
+		if key.Less(finger.entry.K) {
 			finger = finger.children[0]
-		} else if compare(finger.entry.K, key) {
+		} else if finger.entry.K.Less(key) {
 			finger = finger.children[1]
 		} else {
 			// equal
@@ -133,43 +175,43 @@ func (node *node[K, V]) get(key K, compare func(K, K) bool) (value V, ok bool) {
 	}
 }
 
-func (node *node[K, V]) insert(key K, value V, compare func(K, K) bool) *node[K, V] {
+func (node *Node[K, V]) Insert(key K, value V) *Node[K, V] {
 	if node == nil {
 		return mk_OrdMap(Entry[K, V]{key, value}, nil, nil)
 	}
 	entry, left, right := node.entry, node.children[0], node.children[1]
-	if compare(node.entry.K, key) {
-		right = right.insert(key, value, compare)
-	} else if compare(key, node.entry.K) {
-		left = left.insert(key, value, compare)
+	if node.entry.K.Less(key) {
+		right = right.Insert(key, value)
+	} else if key.Less(node.entry.K) {
+		left = left.Insert(key, value)
 	} else { // equals
 		entry = Entry[K, V]{key, value}
 	}
 	return rotate(entry, left, right)
 }
 
-func (node *node[K, V]) remove(key K, compare func(K, K) bool) *node[K, V] {
+func (node *Node[K, V]) Remove(key K) *Node[K, V] {
 	if node == nil {
 		return nil
 	}
 	entry, left, right := node.entry, node.children[0], node.children[1]
-	if compare(node.entry.K, key) {
-		right = right.remove(key, compare)
-	} else if compare(key, node.entry.K) {
-		left = left.remove(key, compare)
+	if node.entry.K.Less(key) {
+		right = right.Remove(key)
+	} else if key.Less(node.entry.K) {
+		left = left.Remove(key)
 	} else { // equals
 		max := left.Max()
 		if max == nil {
 			return right
 		} else {
-			left = left.remove(max.K, compare)
+			left = left.Remove(max.K)
 			entry = *max
 		}
 	}
 	return rotate(entry, left, right)
 }
 
-func rotate[K, V any](entry Entry[K, V], left, right *node[K, V]) *node[K, V] {
+func rotate[K Comparable[K], V any](entry Entry[K, V], left, right *Node[K, V]) *Node[K, V] {
 	if right.height()-left.height() > 1 { // implies right != nil
 		// single left
 		rl := right.children[0]
@@ -201,20 +243,20 @@ func rotate[K, V any](entry Entry[K, V], left, right *node[K, V]) *node[K, V] {
 	return mk_OrdMap(entry, left, right)
 }
 
-func (node *node[K, V]) length() int {
+func (node *Node[K, V]) Len() int {
 	if node == nil {
 		return 0
 	}
 	return node.len
 }
 
-type entriesFrame[K, V any] struct {
-	node     *node[K, V]
+type entriesFrame[K Comparable[K], V any] struct {
+	node     *Node[K, V]
 	leftDone bool
 }
 
-func (node *node[K, V]) entries() []Entry[K, V] {
-	elems := make([]Entry[K, V], 0, node.length())
+func (node *Node[K, V]) Entries() []Entry[K, V] {
+	elems := make([]Entry[K, V], 0, node.Len())
 	if node == nil {
 		return elems
 	}
@@ -240,7 +282,7 @@ func (node *node[K, V]) entries() []Entry[K, V] {
 	return elems
 }
 
-func (node *node[K, V]) extreme(dir int) *Entry[K, V] {
+func (node *Node[K, V]) extreme(dir int) *Entry[K, V] {
 	if node == nil {
 		return nil
 	}
@@ -251,28 +293,43 @@ func (node *node[K, V]) extreme(dir int) *Entry[K, V] {
 	return &finger.entry
 }
 
-func (node *node[K, V]) Min() *Entry[K, V] {
+func (node *Node[K, V]) Min() *Entry[K, V] {
 	return node.extreme(0)
 }
 
-func (node *node[K, V]) Max() *Entry[K, V] {
+func (node *Node[K, V]) Max() *Entry[K, V] {
 	return node.extreme(1)
 }
 
-type iteratorStackFrame[K, V any] struct {
-	node  *node[K, V]
+
+func (node *Node[K, V]) Iterate() Iterator[K, V] {
+	return newIterator[K, V](node, 0, nil)
+}
+
+func (node *Node[K, V]) IterateFrom(k K) Iterator[K, V] {
+	return newIterator(node, 0, &k)
+}
+
+func (node *Node[K, V]) IterateReverse() Iterator[K, V] {
+	return newIterator(node, 1, nil)
+}
+
+func (node *Node[K, V]) IterateReverseFrom(k K) Iterator[K, V] {
+	return newIterator(node, 1, &k)
+}
+
+type iteratorStackFrame[K Comparable[K], V any] struct {
+	node  *Node[K, V]
 	state int8
 }
 
-type Iterator[K, V any] struct {
+type Iterator[K Comparable[K], V any] struct {
 	direction    int
-	less         func(K, K) bool
 	stack        []iteratorStackFrame[K, V]
 	currentEntry Entry[K, V]
 }
 
-func newIterator[K, V any](ordMap OrdMap[K, V], direction int, startFrom *K) Iterator[K, V] {
-	root := ordMap.root
+func newIterator[K Comparable[K], V any](root *Node[K, V], direction int, startFrom *K) Iterator[K, V] {
 	if root == nil {
 		return Iterator[K, V]{}
 	}
@@ -281,7 +338,6 @@ func newIterator[K, V any](ordMap OrdMap[K, V], direction int, startFrom *K) Ite
 	iter := Iterator[K, V]{
 		direction: direction,
 		stack:     stack,
-		less:      ordMap.compare,
 	}
 	if startFrom != nil {
 		stack[0].state = 2
@@ -341,7 +397,7 @@ LOOP:
 			i.stack = i.stack[:last]                   // pop
 			break LOOP
 		}
-		if i.direction == 0 && !(i.less(frame.node.entry.K, k)) || (i.direction == 1 && !(i.less(k, frame.node.entry.K))) {
+		if i.direction == 0 && !(frame.node.entry.K.Less(k)) || (i.direction == 1 && !(k.Less(frame.node.entry.K))) {
 			i.stack = append(i.stack, iteratorStackFrame[K, V]{node: frame.node.children[i.direction], state: 2})
 		} else {
 			// override frame - tail call optimisation

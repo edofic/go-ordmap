@@ -11,7 +11,7 @@ type MyValue struct {
 }
 
 func main() {
-	m := ordmap.New[int, *MyValue](ordmap.Less[int])
+	m := ordmap.NewBuiltin[int, *MyValue]()
 	m = m.Insert(1, &MyValue{1})
 	m = m.Insert(2, &MyValue{2})
 	m = m.Insert(2, &MyValue{2})

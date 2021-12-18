@@ -11,7 +11,7 @@ func BenchmarkComparison(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
 			b.Run("avl", func(b *testing.B) {
-				tree := ordmap.New[int, struct{}](ordmap.Less[int])
+				tree := ordmap.NewBuiltin[int, struct{}]()
 				for i := 0; i < M; i++ {
 					tree = tree.Insert(i, struct{}{})
 				}
