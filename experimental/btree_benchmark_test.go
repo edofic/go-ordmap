@@ -3,15 +3,15 @@ package ordmap
 import (
 	"fmt"
 	"testing"
-)
 
-//go:generate go run github.com/edofic/go-ordmap/cmd/gen -impl avl  -name AvlIntSet -key int -less "<" -value struct{} -target ./avl_int_set.go -pkg ordmap
+	"github.com/edofic/go-ordmap/v2"
+)
 
 func BenchmarkComparison(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
 			b.Run("avl", func(b *testing.B) {
-				var tree *AvlIntSet
+				tree := ordmap.New[int, struct{}](ordmap.Less[int])
 				for i := 0; i < M; i++ {
 					tree = tree.Insert(i, struct{}{})
 				}
