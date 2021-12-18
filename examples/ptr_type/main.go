@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/edofic/go-ordmap"
+	"github.com/edofic/go-ordmap/v2"
 )
 
 type MyValue struct {

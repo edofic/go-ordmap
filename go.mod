@@ -1,4 +1,4 @@
-module github.com/edofic/go-ordmap
+module github.com/edofic/go-ordmap/v2
 
 go 1.18
 
