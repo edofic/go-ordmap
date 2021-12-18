@@ -1,10 +1,13 @@
 # go-ordmap
 
-[![main pipeline](https://github.com/edofic/go-ordmap/actions/workflows/main.yml/badge.svg)](https://github.com/edofic/go-ordmap/actions/workflows/main.yml)
+[![main](https://github.com/edofic/go-ordmap/actions/workflows/main.yml/badge.svg?branch=v2)](https://github.com/edofic/go-ordmap/actions/workflows/main.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/edofic/go-ordmap)](https://goreportcard.com/report/github.com/edofic/go-ordmap)
 [![GoDoc](https://godoc.org/github.com/gopherjs/vecty?status.svg)](https://godoc.org/github.com/edofic/go-ordmap)
 
 Persistent generic ordered maps for Go.
+
+This is the branch with `v2` which is based on 1.18 generics. Currently a separate branch as 1.18 is still in beta, will become the default once 1.18.0 is released.
+See `master` branch for non-generics version (based on code generation).
 
 ## Rationale
 
