@@ -6,6 +6,8 @@
 
 Persistent generic ordered maps for Go.
 
+This is the code-generating version, for generics-based version (Go 1.18+) see [v2](https://github.com/edofic/go-ordmap/tree/v2).
+
 ## Rationale
 
 Standard library does not provide a key-value store data structure that would
