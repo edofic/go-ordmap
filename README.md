@@ -29,6 +29,45 @@ In order to facilitate safe API and efficient internalization the this module ue
 
 ## Usage
 
+```sh
+go1.18beta1 get github.com/edofic/go-ordmap/v2@ef7c960e
+```
+
+You only need to remember to always assign the returned value of all
+operations; the original object is never updated in-place:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/edofic/go-ordmap/v2"
+)
+
+func main() {
+	m1 := ordmap.New[int, string](ordmap.Less[int])
+	m1 = m1.Insert(1, "foo") // adding entries
+	m1 = m1.Insert(2, "baz")
+	m1 = m1.Insert(2, "bar") // will override
+	fmt.Println(m1.Get(2))   // access by key
+	m1 = m1.Insert(3, "baz")
+	// this is how you can efficiently iterate in-order
+	for i := m1.Iterate(); !i.Done(); i.Next() {
+		fmt.Println(i.GetKey(), i.GetValue())
+	}
+	m1 = m1.Remove(1) // can also remove entries
+	fmt.Println(m1.Entries()) // or get a slice of all of them
+	// can iterate in reverse as well
+	for i := m1.IterateReverse(); !i.Done(); i.Next() {
+		fmt.Println(i.GetKey(), i.GetValue())
+	}
+	fmt.Println(m1.Min(), m1.Max()) // access the extremes
+}
+```
+
+See [examples](https://github.com/edofic/go-ordmap/blob/v2/examples) for more.
+
 You will need to provide the `Less` function - so the map knows how to order
 itself. There is a generic `ordmap.Less` function that is available for all types that support the `<` operator, but for custom types you will need to provide your own, e.g.
 
@@ -37,36 +76,6 @@ func compareMyKey(k1, k2 MyKey) bool {
     return k1.v < k2.v
 }
 ```
-
-### Using the map
-
-You only need to remember to always assign the returned value of all
-operations; the original object is never updated in-place:
-
-```go
-m1 := ordmap.New[int, string](ordmap.Less[int])
-m1 = m1.Insert(intKey(1), "foo") // adding entries
-m1 = m1.Insert(intKey(2), "baz")
-m1 = m1.Insert(intKey(2), "bar") // will override
-fmt.Println(m1.Get(intKey(2)))   // access by key
-m1 = m1.Insert(intKey(3), "baz")
-// this is how you can efficiently iterate in-order
-for i := m1.Iterate(); !i.Done(); i.Next() {
-    fmt.Println(i.GetKey(), i.GetValue())
-}
-m1 = m1.Remove(intKey(1)) // can also remove entries
-fmt.Println(m1.Entries()) // or get a slice of all of them
-// can iterate in reverse as well
-for i := m1.IterateReverse(); !i.Done(); i.Next() {
-    fmt.Println(i.GetKey(), i.GetValue())
-}
-fmt.Println(m1.Min(), m1.Max()) // access the extremes
-```
-
-See
-[examples/basic/main.go](https://github.com/edofic/go-ordmap/blob/master/examples/basic/main.go)
-for a fully functioning example.
-
 
 ## Development
 
