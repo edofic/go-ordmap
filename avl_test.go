@@ -267,6 +267,28 @@ func TestIterator(t *testing.T) {
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
 }
 
+func TestIteratorBuiltin(t *testing.T) {
+	var tree NodeBuiltin[int, int]
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(i, i)
+	}
+
+	valuesFromEntries := make([]int, N)
+	for i, entry := range tree.Entries() {
+		valuesFromEntries[i] = entry.V
+	}
+
+	keysFromIterator := make([]int, 0, N)
+	valuesFromIterator := make([]int, 0, N)
+	for iter := tree.Iterate(); !iter.Done(); iter.Next() {
+		keysFromIterator = append(keysFromIterator, iter.GetKey().value)
+		valuesFromIterator = append(valuesFromIterator, iter.GetValue())
+	}
+	require.Equal(t, valuesFromEntries, keysFromIterator)
+	require.Equal(t, valuesFromEntries, valuesFromIterator)
+}
+
 func TestIteratorReverse(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
