@@ -104,7 +104,7 @@ func (i *IteratorBuiltin[K, V]) Done() bool {
 }
 
 func (i *IteratorBuiltin[K, V]) Next() {
-	i.i.Done()
+	i.i.Next()
 }
 
 func (i *IteratorBuiltin[K, V]) GetKey() K {
