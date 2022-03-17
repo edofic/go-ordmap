@@ -282,7 +282,7 @@ func TestIteratorBuiltin(t *testing.T) {
 	keysFromIterator := make([]int, 0, N)
 	valuesFromIterator := make([]int, 0, N)
 	for iter := tree.Iterate(); !iter.Done(); iter.Next() {
-		keysFromIterator = append(keysFromIterator, iter.GetKey().value)
+		keysFromIterator = append(keysFromIterator, iter.GetKey())
 		valuesFromIterator = append(valuesFromIterator, iter.GetValue())
 	}
 	require.Equal(t, valuesFromEntries, keysFromIterator)
