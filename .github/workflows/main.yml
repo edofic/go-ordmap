@@ -2,24 +2,19 @@ name: main
 
 on:
   push:
-    branches: [ v2 ]
   pull_request:
-    branches: [ v2 ]
 
 jobs:
 
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Go
-      run: |
-        curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.0/install-go.pl |
-            perl - tip $HOME/go
-      #uses: actions/setup-go@v2
-      #with:
-      #  go-version: go1.18
+      uses: actions/setup-go@v4
+      with:
+       go-version: '1.20'
 
     - name: Test
       run: go test -v ./...
