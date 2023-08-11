@@ -5,7 +5,6 @@ on:
   pull_request:
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -15,6 +14,11 @@ jobs:
       uses: actions/setup-go@v4
       with:
        go-version: '1.20'
+
+    - name: lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        skip-cache: true # caching done by setup-go
 
     - name: Test
       run: go test -v ./...
