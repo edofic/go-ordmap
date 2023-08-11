@@ -6,8 +6,9 @@
 
 Persistent generic ordered maps for Go.
 
-This is the branch with `v2` which is based on 1.18 generics. Currently a separate branch as 1.18 is still in beta, will become the default once 1.18.0 is released.
-See `master` branch for non-generics version (based on code generation).
+This is `v2` which is based on 1.18 generics. If you can't (or don't want to)
+use generics there is still `v1` which uses code generation. See [v1
+branch](https://github.com/edofic/go-ordmap/tree/v1).
 
 ## Rationale
 
