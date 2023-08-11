@@ -1,33 +1,28 @@
-//go:generate go run github.com/edofic/go-ordmap/cmd/gen -name IntStrMap -key intKey -value string -target ./int_str_map.go
-//go:generate go run github.com/edofic/go-ordmap/cmd/gen -name IntIntMap -key int -less "<" -value int -target ./int_int_map.go
 package main
 
 import (
 	"fmt"
+
+	"github.com/edofic/go-ordmap/v2"
 )
 
-type intKey int
-
-func (i intKey) Less(other intKey) bool {
-	return int(i) < int(other)
-}
-
 func main() {
-	var m1 *IntStrMap                // zero value is the empty map
-	m1 = m1.Insert(intKey(1), "foo") // adding entries
-	m1 = m1.Insert(intKey(2), "baz")
-	m1 = m1.Insert(intKey(2), "bar") // will override
-	fmt.Println(m1.Get(intKey(2)))   // access by key
-	m1 = m1.Insert(intKey(3), "baz")
+	m1 := ordmap.NewBuiltin[int, string]()
+
+	m1 = m1.Insert(1, "foo") // adding entries
+	m1 = m1.Insert(2, "baz")
+	m1 = m1.Insert(2, "bar") // will override
+	fmt.Println(m1.Get(2))   // access by key
+	m1 = m1.Insert(3, "baz")
 	// this is how you can efficiently iterate in-order
 	for i := m1.Iterate(); !i.Done(); i.Next() {
 		fmt.Println(i.GetKey(), i.GetValue())
 	}
-	m1 = m1.Remove(intKey(1)) // can also remove entries
+	m1 = m1.Remove(1)         // can also remove entries
 	fmt.Println(m1.Entries()) // or get a slice of all of them
 
 	// can use another map of different type in the same package
-	var m2 *IntIntMap
+	m2 := ordmap.NewBuiltin[int, int]()
 	v, ok := m2.Get(0)
 	fmt.Println("wat", v, ok)
 	m2 = m2.Insert(1, 1) // this one has "raw" ints for keys
