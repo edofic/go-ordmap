@@ -502,6 +502,40 @@ func TestBackwardFrom(t *testing.T) {
 	})
 }
 
+func BenchmarkIteratorOld(b *testing.B) {
+	for _, N := range []int{10, 100, 1000, 10000, 100000} {
+		b.Run(fmt.Sprintf("%v", N), func(b *testing.B) {
+			var tree *Node[Builtin[int], int]
+			for i := 0; i < N; i++ {
+				tree = tree.Insert(Builtin[int]{i}, i)
+			}
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				for iter := tree.Iterate(); !iter.Done(); iter.Next() {
+					_, _ = iter.GetKey(), iter.GetValue()
+				}
+			}
+		})
+	}
+}
+
+func BenchmarkIteratorNew(b *testing.B) {
+	for _, N := range []int{10, 100, 1000, 10000, 100000} {
+		b.Run(fmt.Sprintf("%v", N), func(b *testing.B) {
+			var tree *Node[Builtin[int], int]
+			for i := 0; i < N; i++ {
+				tree = tree.Insert(Builtin[int]{i}, i)
+			}
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				for k, v := range tree.All() {
+					_, _ = k.value, v
+				}
+			}
+		})
+	}
+}
+
 func TestEmptyLen(t *testing.T) {
 	var empty *Node[Builtin[int], int]
 	require.Equal(t, 0, empty.Len())
