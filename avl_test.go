@@ -374,6 +374,134 @@ func TestIterateFrom(t *testing.T) {
 	})
 }
 
+func TestAll(t *testing.T) {
+	var tree *Node[Builtin[int], int]
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(Builtin[int]{i}, i)
+	}
+
+	valuesFromEntries := make([]int, N)
+	for i, entry := range tree.Entries() {
+		valuesFromEntries[i] = entry.V
+	}
+
+	keysFromIterator := make([]int, 0, N)
+	valuesFromIterator := make([]int, 0, N)
+	for k, v := range tree.All() {
+		keysFromIterator = append(keysFromIterator, k.value)
+		valuesFromIterator = append(valuesFromIterator, v)
+	}
+	require.Equal(t, valuesFromEntries, keysFromIterator)
+	require.Equal(t, valuesFromEntries, valuesFromIterator)
+}
+
+func TestAllBuiltin(t *testing.T) {
+	var tree NodeBuiltin[int, int]
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(i, i)
+	}
+
+	valuesFromEntries := make([]int, N)
+	for i, entry := range tree.Entries() {
+		valuesFromEntries[i] = entry.V
+	}
+
+	keysFromIterator := make([]int, 0, N)
+	valuesFromIterator := make([]int, 0, N)
+	for k, v := range tree.All() {
+		keysFromIterator = append(keysFromIterator, k)
+		valuesFromIterator = append(valuesFromIterator, v)
+	}
+	require.Equal(t, valuesFromEntries, keysFromIterator)
+	require.Equal(t, valuesFromEntries, valuesFromIterator)
+}
+
+func TestBackward(t *testing.T) {
+	var tree *Node[Builtin[int], int]
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(Builtin[int]{i}, i)
+	}
+
+	valuesFromEntries := make([]int, N)
+	for i, entry := range tree.Entries() {
+		valuesFromEntries[N-i-1] = entry.V
+	}
+
+	valuesFromIterator := make([]int, 0, N)
+	for _, v := range tree.Backward() {
+		valuesFromIterator = append(valuesFromIterator, v)
+	}
+	require.Equal(t, valuesFromEntries, valuesFromIterator)
+}
+
+func TestFrom(t *testing.T) {
+	var tree *Node[Builtin[int], int]
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(Builtin[int]{i}, i)
+	}
+
+	t.Run("forward range", func(t *testing.T) {
+		valuesFromIterator := make([]int, 0, N)
+		for _, v := range tree.From(Builtin[int]{37}) {
+			if v >= 42 {
+				break
+			}
+			valuesFromIterator = append(valuesFromIterator, v)
+		}
+		require.Equal(t, []int{37, 38, 39, 40, 41}, valuesFromIterator)
+	})
+
+	t.Run("forward whole", func(t *testing.T) {
+		valuesFromIterator := make([]int, 0, N)
+		for _, v := range tree.From(Builtin[int]{0}) {
+			valuesFromIterator = append(valuesFromIterator, v)
+		}
+		require.Len(t, valuesFromIterator, 100)
+	})
+
+	t.Run("early termination", func(t *testing.T) {
+		count := 0
+		for _, _ = range tree.All() {
+			count++
+			if count >= 5 {
+				break
+			}
+		}
+		require.Equal(t, 5, count)
+	})
+}
+
+func TestBackwardFrom(t *testing.T) {
+	var tree *Node[Builtin[int], int]
+	N := 100
+	for i := 0; i < N; i++ {
+		tree = tree.Insert(Builtin[int]{i}, i)
+	}
+
+	t.Run("reverse range", func(t *testing.T) {
+		valuesFromIterator := make([]int, 0, N)
+		for _, v := range tree.BackwardFrom(Builtin[int]{41}) {
+			if v < 37 {
+				break
+			}
+			valuesFromIterator = append(valuesFromIterator, v)
+		}
+		require.Equal(t, []int{41, 40, 39, 38, 37}, valuesFromIterator)
+	})
+
+	t.Run("reverse whole", func(t *testing.T) {
+		valuesFromIterator := make([]int, 0, N)
+		for _, v := range tree.BackwardFrom(Builtin[int]{100}) {
+			valuesFromIterator = append(valuesFromIterator, v)
+		}
+		require.Len(t, valuesFromIterator, 100)
+	})
+}
+
 func TestEmptyLen(t *testing.T) {
 	var empty *Node[Builtin[int], int]
 	require.Equal(t, 0, empty.Len())
@@ -398,15 +526,15 @@ func BenchmarkMap(b *testing.B) {
 func BenchmarkTree(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
-				var tree *Node[Builtin[int], int]
+			var tree *Node[Builtin[int], int]
 			for i := 0; i < M; i++ {
 				tree = tree.Insert(Builtin[int]{i}, i)
 			}
 			b.Run("InsertRemove", func(b *testing.B) {
 				b.ReportAllocs()
 				for i := 0; i < b.N; i++ {
-					tree1 := tree.Insert(Builtin[int]{M+1}, M+1)
-					_ = tree1.Remove(Builtin[int]{M+1})
+					tree1 := tree.Insert(Builtin[int]{M + 1}, M+1)
+					_ = tree1.Remove(Builtin[int]{M + 1})
 				}
 			})
 			b.Run("Entries", func(b *testing.B) {

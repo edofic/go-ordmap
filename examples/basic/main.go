@@ -15,8 +15,8 @@ func main() {
 	fmt.Println(m1.Get(2))   // access by key
 	m1 = m1.Insert(3, "baz")
 	// this is how you can efficiently iterate in-order
-	for i := m1.Iterate(); !i.Done(); i.Next() {
-		fmt.Println(i.GetKey(), i.GetValue())
+	for k, v := range m1.All() {
+		fmt.Println(k, v)
 	}
 	m1 = m1.Remove(1)         // can also remove entries
 	fmt.Println(m1.Entries()) // or get a slice of all of them
@@ -30,8 +30,8 @@ func main() {
 	m2 = m2.Insert(2, 2) // `-less "<"` to the genreeator in order to use
 	m2 = m2.Insert(3, 3) // native comparator
 	// can iterate in reverse as well
-	for i := m2.IterateReverse(); !i.Done(); i.Next() {
-		fmt.Println(i.GetKey(), i.GetValue())
+	for k, v := range m2.Backward() {
+		fmt.Println(k, v)
 	}
 	fmt.Println(m2.Min(), m2.Max()) // access the extremes
 }

@@ -16,7 +16,7 @@ func main() {
 	m = m.Insert(2, &MyValue{2})
 	m = m.Insert(2, &MyValue{2})
 	m = m.Insert(3, &MyValue{3})
-	for i := m.Iterate(); !i.Done(); i.Next() {
-		fmt.Println(i.GetKey(), i.GetValue().foo)
+	for k, v := range m.All() {
+		fmt.Println(k, v.foo)
 	}
 }

@@ -37,7 +37,10 @@ func main() {
 	// but with a bit of cunningnes you can also query a prefix
 	// e.g all preferences for user 2
 	targetUser := 2
-	for i := preferences.IterateFrom(CompositeKey{targetUser, 0}); !i.Done() && i.GetKey().User == targetUser; i.Next() {
-		fmt.Println(i.GetKey(), i.GetValue())
+	for k, v := range preferences.From(CompositeKey{targetUser, 0}) {
+		if k.User != targetUser {
+			break
+		}
+		fmt.Println(k, v)
 	}
 }
