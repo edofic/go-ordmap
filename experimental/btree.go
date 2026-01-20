@@ -7,13 +7,17 @@ import (
 
 const MAX = 5 // must be odd
 
-type Comparable[K any] interface {
-	Cmp(K) int
+type Comparable[A any] interface {
+	Less(A) bool
 }
 
 type Entry[K, V any] struct {
 	K K
 	V V
+}
+
+func New[K Comparable[K], V any]() *OrdMap[K, V] {
+	return nil
 }
 
 type OrdMap[K Comparable[K], V any] struct {
@@ -67,13 +71,13 @@ OUTER:
 	for finger != nil {
 		for i := 0; i < int(finger.order); i++ {
 			entry := finger.entries[i]
-			cmp := key.Cmp(entry.K)
-			if cmp == 0 {
-				return entry.V, true
-			}
-			if cmp < 0 { // key < entry.K
+			if key.Less(entry.K) {
 				finger = finger.subtrees[i]
 				continue OUTER
+			} else if entry.K.Less(key) {
+				// continue
+			} else {
+				return entry.V, true
 			}
 		}
 		finger = finger.subtrees[finger.order]
@@ -106,7 +110,7 @@ func (n *OrdMap[K, V]) Remove(key K) *OrdMap[K, V] {
 	if _, ok := n.Get(key); !ok {
 		return n
 	}
-	if n.height == 1 && n.order == 1 && n.entries[0].K.Cmp(key) == 0 {
+	if n.height == 1 && n.order == 1 && n.entries[0].K.Less(key) == false && key.Less(n.entries[0].K) == false {
 		return nil
 	}
 	n = n.dup()
@@ -200,7 +204,7 @@ func (n *OrdMap[K, V]) Backward() iter.Seq2[K, V] {
 	}
 }
 
-func (n *OrdMap[K, V]) AllFrom(k K) iter.Seq2[K, V] {
+func (n *OrdMap[K, V]) From(k K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		// Phase 2: Unconditional Iterator
 		// Standard B-Tree traversal: LeftSub -> Entry -> RightSub
@@ -238,14 +242,11 @@ func (n *OrdMap[K, V]) AllFrom(k K) iter.Seq2[K, V] {
 			for i := 0; i < int(n.order); i++ {
 				entry := n.entries[i]
 
-				// Compare k vs entry.K
-				cmp := k.Cmp(entry.K)
-
 				// Case 1: k > entry.K
 				// The entry is strictly smaller than k.
 				// Implication: subtree[i] is also strictly smaller.
 				// Action: Skip both subtree[i] and entry[i].
-				if cmp > 0 {
+				if entry.K.Less(k) {
 					continue
 				}
 
@@ -334,13 +335,12 @@ func (n *OrdMap[K, V]) BackwardFrom(k K) iter.Seq2[K, V] {
 			// Loop backwards: check largest entries first
 			for i := int(n.order) - 1; i >= 0; i-- {
 				entry := n.entries[i]
-				cmp := k.Cmp(entry.K)
 
 				// Case 1: k < entry.K
 				// This entry is too big.
 				// Implication: The subtree to its right (subtrees[i+1]) is even bigger.
 				// Action: Skip both. Continue loop to check smaller entries.
-				if cmp < 0 {
+				if k.Less(entry.K) {
 					continue
 				}
 
@@ -392,7 +392,7 @@ OUTER:
 	for {
 		if n.height == 1 {
 			for i := 0; i < int(n.order); i++ {
-				if n.entries[i].K.Cmp(key) == 0 {
+				if n.entries[i].K.Less(key) == false && key.Less(n.entries[i].K) == false {
 					top := int(n.order) - 1
 					for j := i; j < top; j++ {
 						n.entries[j] = n.entries[j+1]
@@ -406,13 +406,13 @@ OUTER:
 		} else {
 			index := int(n.order)
 			for i := 0; i < int(n.order); i++ {
-				if n.entries[i].K.Cmp(key) == 0 { // inner delete
+				if n.entries[i].K.Less(key) == false && key.Less(n.entries[i].K) == false { // inner delete
 					index = n.ensureChildNotMinimal(i + 1)
 					if n.order == 0 { // degenerated, need to drop a level
 						*n = *n.subtrees[0]
 						continue OUTER
 					}
-					if index != i+1 || n.entries[i].K.Cmp(key) != 0 { // merge OR rotation
+					if index != i+1 || (n.entries[i].K.Less(key) || key.Less(n.entries[i].K)) { // merge OR rotation
 						continue OUTER // easiest to try again
 					}
 					child := n.subtrees[index].dup()
@@ -421,7 +421,7 @@ OUTER:
 					n.entries[i] = min
 					return
 				}
-				if key.Cmp(n.entries[i].K) < 0 {
+				if key.Less(n.entries[i].K) {
 					index = i
 					break
 				}
@@ -442,7 +442,7 @@ func (n *OrdMap[K, V]) insertNonFullMut(key K, value V) {
 OUTER:
 	for {
 		for i := 0; i < int(n.order); i++ {
-			if n.entries[i].K.Cmp(key) == 0 {
+			if n.entries[i].K.Less(key) == false && key.Less(n.entries[i].K) == false {
 				n.entries[i].V = value
 				return
 			}
@@ -451,7 +451,7 @@ OUTER:
 			n.entries[n.order] = Entry[K, V]{key, value}
 			n.order += 1
 			for i := int(n.order) - 1; i > 0; i-- {
-				if n.entries[i].K.Cmp(n.entries[i-1].K) < 0 {
+				if n.entries[i].K.Less(n.entries[i-1].K) {
 					n.entries[i], n.entries[i-1] = n.entries[i-1], n.entries[i]
 				} else {
 					break
@@ -461,7 +461,7 @@ OUTER:
 		}
 		index := 0
 		for i := 0; i < int(n.order); i++ {
-			if key.Cmp(n.entries[i].K) > 0 {
+			if n.entries[i].K.Less(key) {
 				index = i + 1
 			}
 		}
@@ -478,16 +478,15 @@ OUTER:
 			n.subtrees[index] = left
 			n.subtrees[index+1] = right
 			n.order += 1
-			cmp := key.Cmp(entry.K)
-			if cmp < 0 {
+			if key.Less(entry.K) {
 				n = left
 				continue OUTER
-			} else if cmp == 0 {
-				n.entries[index].V = value
-				return
-			} else {
+			} else if entry.K.Less(key) {
 				n = right
 				continue OUTER
+			} else {
+				n.entries[index].V = value
+				return
 			}
 		} else {
 			n.subtrees[index] = n.subtrees[index].dup()
