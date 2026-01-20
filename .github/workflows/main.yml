@@ -8,17 +8,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-       go-version: '1.20'
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
 
-    - name: lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        skip-cache: true # caching done by setup-go
+      - name: lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          skip-cache: true # caching done by setup-go
 
-    - name: Test
-      run: go test -v ./...
+      - name: Test
+        run: go test -v ./...
