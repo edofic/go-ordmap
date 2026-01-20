@@ -62,13 +62,6 @@ func validateOrdered[K Comparable[K], V any](t *testing.T, root *Node[K, V]) {
 	step(root)
 }
 
-func requireIterEq[K Comparable[K], V any](t *testing.T, i1, i2 Iterator[K, V]) {
-	require.Equal(t, i1.direction, i2.direction)
-	// skip `less` as it's not pertinent to iterator behavior once constructed
-	require.Equal(t, i1.stack, i2.stack)
-	require.Equal(t, i1.currentEntry, i2.currentEntry)
-}
-
 type TreeModel struct {
 	t     *testing.T
 	elems []Entry[Builtin[int], int]
@@ -174,7 +167,7 @@ func TestModelRandom(t *testing.T) {
 	model := NewTreeModel(t)
 	samples := make(map[int]*Node[Builtin[int], int])
 	sizes := make(map[int]int)
-	for i := 0; i < N; i++ {
+	for i := range N {
 		if rand.Float64() < 0.7 { // skewed so the tree can grow
 			model.Insert(rand.Intn(N))
 		} else {
@@ -239,7 +232,7 @@ func TestRemoveMissing(t *testing.T) {
 func TestIteratorEmpty(t *testing.T) {
 	var tree *Node[Builtin[int], string]
 	count := 0
-	for iter := tree.Iterate(); !iter.Done(); iter.Next() {
+	for range tree.All() {
 		count += 1
 	}
 	require.Equal(t, 0, count)
@@ -248,7 +241,7 @@ func TestIteratorEmpty(t *testing.T) {
 func TestIterator(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(Builtin[int]{i}, i)
 	}
 
@@ -259,9 +252,9 @@ func TestIterator(t *testing.T) {
 
 	keysFromIterator := make([]int, 0, N)
 	valuesFromIterator := make([]int, 0, N)
-	for iter := tree.Iterate(); !iter.Done(); iter.Next() {
-		keysFromIterator = append(keysFromIterator, iter.GetKey().value)
-		valuesFromIterator = append(valuesFromIterator, iter.GetValue())
+	for k, v := range tree.All() {
+		keysFromIterator = append(keysFromIterator, k.value)
+		valuesFromIterator = append(valuesFromIterator, v)
 	}
 	require.Equal(t, valuesFromEntries, keysFromIterator)
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
@@ -270,7 +263,7 @@ func TestIterator(t *testing.T) {
 func TestIteratorBuiltin(t *testing.T) {
 	var tree NodeBuiltin[int, int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(i, i)
 	}
 
@@ -281,9 +274,9 @@ func TestIteratorBuiltin(t *testing.T) {
 
 	keysFromIterator := make([]int, 0, N)
 	valuesFromIterator := make([]int, 0, N)
-	for iter := tree.Iterate(); !iter.Done(); iter.Next() {
-		keysFromIterator = append(keysFromIterator, iter.GetKey())
-		valuesFromIterator = append(valuesFromIterator, iter.GetValue())
+	for k, v := range tree.All() {
+		keysFromIterator = append(keysFromIterator, k)
+		valuesFromIterator = append(valuesFromIterator, v)
 	}
 	require.Equal(t, valuesFromEntries, keysFromIterator)
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
@@ -292,7 +285,7 @@ func TestIteratorBuiltin(t *testing.T) {
 func TestIteratorReverse(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(Builtin[int]{i}, i)
 	}
 
@@ -302,8 +295,8 @@ func TestIteratorReverse(t *testing.T) {
 	}
 
 	valuesFromIterator := make([]int, 0, N)
-	for iter := tree.IterateReverse(); !iter.Done(); iter.Next() {
-		valuesFromIterator = append(valuesFromIterator, iter.GetValue())
+	for _, v := range tree.Backward() {
+		valuesFromIterator = append(valuesFromIterator, v)
 	}
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
 }
@@ -311,14 +304,13 @@ func TestIteratorReverse(t *testing.T) {
 func TestIterateFrom(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(Builtin[int]{i}, i)
 	}
 
 	t.Run("forward range", func(t *testing.T) {
 		valuesFromIterator := make([]int, 0, N)
-		for iter := tree.IterateFrom(Builtin[int]{37}); !iter.Done(); iter.Next() {
-			value := iter.GetValue()
+		for _, value := range tree.From(Builtin[int]{37}) {
 			if value >= 42 {
 				break
 			}
@@ -329,8 +321,7 @@ func TestIterateFrom(t *testing.T) {
 
 	t.Run("forward whole", func(t *testing.T) {
 		valuesFromIterator := make([]int, 0, N)
-		for iter := tree.IterateFrom(Builtin[int]{0}); !iter.Done(); iter.Next() {
-			value := iter.GetValue()
+		for _, value := range tree.From(Builtin[int]{0}) {
 			valuesFromIterator = append(valuesFromIterator, value)
 		}
 		require.Len(t, valuesFromIterator, 100)
@@ -338,8 +329,7 @@ func TestIterateFrom(t *testing.T) {
 
 	t.Run("reverse range", func(t *testing.T) {
 		valuesFromIterator := make([]int, 0, N)
-		for iter := tree.IterateReverseFrom(Builtin[int]{41}); !iter.Done(); iter.Next() {
-			value := iter.GetValue()
+		for _, value := range tree.BackwardFrom(Builtin[int]{41}) {
 			if value < 37 {
 				break
 			}
@@ -350,34 +340,17 @@ func TestIterateFrom(t *testing.T) {
 
 	t.Run("reverse whole", func(t *testing.T) {
 		valuesFromIterator := make([]int, 0, N)
-		for iter := tree.IterateReverseFrom(Builtin[int]{100}); !iter.Done(); iter.Next() {
-			value := iter.GetValue()
+		for _, value := range tree.BackwardFrom(Builtin[int]{100}) {
 			valuesFromIterator = append(valuesFromIterator, value)
 		}
 		require.Len(t, valuesFromIterator, 100)
-	})
-
-	t.Run("internal state", func(t *testing.T) {
-		for iter := tree.Iterate(); !iter.Done(); iter.Next() {
-			key := iter.GetKey()
-			iterFrom := tree.IterateFrom(key)
-			requireIterEq(t, iter, iterFrom)
-		}
-	})
-
-	t.Run("internal state reverse", func(t *testing.T) {
-		for iter := tree.IterateReverse(); !iter.Done(); iter.Next() {
-			key := iter.GetKey()
-			iterFrom := tree.IterateReverseFrom(key)
-			requireIterEq(t, iter, iterFrom)
-		}
 	})
 }
 
 func TestAll(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(Builtin[int]{i}, i)
 	}
 
@@ -399,7 +372,7 @@ func TestAll(t *testing.T) {
 func TestAllBuiltin(t *testing.T) {
 	var tree NodeBuiltin[int, int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(i, i)
 	}
 
@@ -421,7 +394,7 @@ func TestAllBuiltin(t *testing.T) {
 func TestBackward(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(Builtin[int]{i}, i)
 	}
 
@@ -440,7 +413,7 @@ func TestBackward(t *testing.T) {
 func TestFrom(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(Builtin[int]{i}, i)
 	}
 
@@ -465,7 +438,7 @@ func TestFrom(t *testing.T) {
 
 	t.Run("early termination", func(t *testing.T) {
 		count := 0
-		for _, _ = range tree.All() {
+		for range tree.All() {
 			count++
 			if count >= 5 {
 				break
@@ -478,7 +451,7 @@ func TestFrom(t *testing.T) {
 func TestBackwardFrom(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
-	for i := 0; i < N; i++ {
+	for i := range N {
 		tree = tree.Insert(Builtin[int]{i}, i)
 	}
 
@@ -502,40 +475,6 @@ func TestBackwardFrom(t *testing.T) {
 	})
 }
 
-func BenchmarkIteratorOld(b *testing.B) {
-	for _, N := range []int{10, 100, 1000, 10000, 100000} {
-		b.Run(fmt.Sprintf("%v", N), func(b *testing.B) {
-			var tree *Node[Builtin[int], int]
-			for i := 0; i < N; i++ {
-				tree = tree.Insert(Builtin[int]{i}, i)
-			}
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				for iter := tree.Iterate(); !iter.Done(); iter.Next() {
-					_, _ = iter.GetKey(), iter.GetValue()
-				}
-			}
-		})
-	}
-}
-
-func BenchmarkIteratorNew(b *testing.B) {
-	for _, N := range []int{10, 100, 1000, 10000, 100000} {
-		b.Run(fmt.Sprintf("%v", N), func(b *testing.B) {
-			var tree *Node[Builtin[int], int]
-			for i := 0; i < N; i++ {
-				tree = tree.Insert(Builtin[int]{i}, i)
-			}
-			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
-				for k, v := range tree.All() {
-					_, _ = k.value, v
-				}
-			}
-		})
-	}
-}
-
 func TestEmptyLen(t *testing.T) {
 	var empty *Node[Builtin[int], int]
 	require.Equal(t, 0, empty.Len())
@@ -545,11 +484,11 @@ func BenchmarkMap(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
 			m := make(map[int]int)
-			for i := 0; i < M; i++ {
+			for i := range M {
 				m[i] = i
 			}
 			b.ReportAllocs()
-			for i := 0; i < b.N; i++ {
+			for range b.N {
 				m[M+1] = M + 1
 				delete(m, M+1)
 			}
@@ -561,48 +500,52 @@ func BenchmarkTree(b *testing.B) {
 	for _, M := range []int{10, 100, 1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
 			var tree *Node[Builtin[int], int]
-			for i := 0; i < M; i++ {
+			for i := range M {
 				tree = tree.Insert(Builtin[int]{i}, i)
 			}
 			b.Run("InsertRemove", func(b *testing.B) {
 				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
+				for range b.N {
 					tree1 := tree.Insert(Builtin[int]{M + 1}, M+1)
 					_ = tree1.Remove(Builtin[int]{M + 1})
 				}
 			})
 			b.Run("Entries", func(b *testing.B) {
 				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
+				for range b.N {
 					tree.Entries()
 				}
 			})
-			b.Run("Iterator", func(b *testing.B) {
+			b.Run("All", func(b *testing.B) {
 				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
-					for iter := tree.Iterate(); !iter.Done(); iter.Next() {
-						// no-op, just consume
+				for range b.N {
+					for k, v := range tree.All() {
+						_, _ = k, v // no-op, just consume
 					}
 				}
 			})
-			b.Run("Iterator5", func(b *testing.B) {
+			b.Run("All5", func(b *testing.B) {
 				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
+				for range b.N {
 					count := 0
-					for iter := tree.Iterate(); !iter.Done() && count < 5; iter.Next() {
+					for k, v := range tree.All() {
+						_, _ = k, v
 						count += 1
+						if count >= 5 {
+							continue
+						}
 					}
 				}
 			})
 			b.Run("Min", func(b *testing.B) {
 				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
+				for range b.N {
 					tree.Min()
 				}
 			})
 			b.Run("Get", func(b *testing.B) {
 				b.ReportAllocs()
-				for i := 0; i < b.N; i++ {
+				for range b.N {
 					tree.Get(Builtin[int]{5})
 				}
 			})

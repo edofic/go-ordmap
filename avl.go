@@ -71,32 +71,13 @@ func (n NodeBuiltin[K, V]) Min() *Entry[K, V] {
 	}
 	return &Entry[K, V]{e.K.value, e.V}
 }
+
 func (n NodeBuiltin[K, V]) Max() *Entry[K, V] {
 	e := n.n.Max()
 	if e == nil {
 		return nil
 	}
 	return &Entry[K, V]{e.K.value, e.V}
-}
-
-// Deprecated: Use All instead, which returns a native Go 1.23 iterator.
-func (n NodeBuiltin[K, V]) Iterate() IteratorBuiltin[K, V] {
-	return IteratorBuiltin[K, V]{n.n.Iterate()}
-}
-
-// Deprecated: Use From instead, which returns a native Go 1.23 iterator.
-func (n NodeBuiltin[K, V]) IterateFrom(k K) IteratorBuiltin[K, V] {
-	return IteratorBuiltin[K, V]{n.n.IterateFrom(Builtin[K]{k})}
-}
-
-// Deprecated: Use Backward instead, which returns a native Go 1.23 iterator.
-func (n NodeBuiltin[K, V]) IterateReverse() IteratorBuiltin[K, V] {
-	return IteratorBuiltin[K, V]{n.n.IterateReverse()}
-}
-
-// Deprecated: Use BackwardFrom instead, which returns a native Go 1.23 iterator.
-func (n NodeBuiltin[K, V]) IterateReverseFrom(k K) IteratorBuiltin[K, V] {
-	return IteratorBuiltin[K, V]{n.n.IterateReverseFrom(Builtin[K]{k})}
 }
 
 func (n NodeBuiltin[K, V]) All() iter.Seq2[K, V] {
@@ -137,26 +118,6 @@ func (n NodeBuiltin[K, V]) BackwardFrom(k K) iter.Seq2[K, V] {
 			}
 		}
 	}
-}
-
-type IteratorBuiltin[K BuiltinComparable, V any] struct {
-	i Iterator[Builtin[K], V]
-}
-
-func (i *IteratorBuiltin[K, V]) Done() bool {
-	return i.i.Done()
-}
-
-func (i *IteratorBuiltin[K, V]) Next() {
-	i.i.Next()
-}
-
-func (i *IteratorBuiltin[K, V]) GetKey() K {
-	return i.i.GetKey().value
-}
-
-func (i *IteratorBuiltin[K, V]) GetValue() V {
-	return i.i.GetValue()
 }
 
 type Node[K Comparable[K], V any] struct {
@@ -345,26 +306,6 @@ func (node *Node[K, V]) Max() *Entry[K, V] {
 	return node.extreme(1)
 }
 
-// Deprecated: Use All instead, which returns a native Go 1.23 iterator.
-func (node *Node[K, V]) Iterate() Iterator[K, V] {
-	return newIterator[K, V](node, 0, nil)
-}
-
-// Deprecated: Use From instead, which returns a native Go 1.23 iterator.
-func (node *Node[K, V]) IterateFrom(k K) Iterator[K, V] {
-	return newIterator(node, 0, &k)
-}
-
-// Deprecated: Use Backward instead, which returns a native Go 1.23 iterator.
-func (node *Node[K, V]) IterateReverse() Iterator[K, V] {
-	return newIterator(node, 1, nil)
-}
-
-// Deprecated: Use BackwardFrom instead, which returns a native Go 1.23 iterator.
-func (node *Node[K, V]) IterateReverseFrom(k K) Iterator[K, V] {
-	return newIterator(node, 1, &k)
-}
-
 func (node *Node[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		if node == nil {
@@ -511,92 +452,4 @@ func (node *Node[K, V]) BackwardFrom(k K) iter.Seq2[K, V] {
 type iteratorStackFrame[K Comparable[K], V any] struct {
 	node  *Node[K, V]
 	state int8
-}
-
-type Iterator[K Comparable[K], V any] struct {
-	direction    int
-	stack        []iteratorStackFrame[K, V]
-	currentEntry Entry[K, V]
-}
-
-func newIterator[K Comparable[K], V any](root *Node[K, V], direction int, startFrom *K) Iterator[K, V] {
-	if root == nil {
-		return Iterator[K, V]{}
-	}
-	stack := make([]iteratorStackFrame[K, V], 1, root.height())
-	stack[0] = iteratorStackFrame[K, V]{node: root, state: 0}
-	iter := Iterator[K, V]{
-		direction: direction,
-		stack:     stack,
-	}
-	if startFrom != nil {
-		stack[0].state = 2
-		iter.seek(*startFrom)
-	} else {
-		iter.Next()
-	}
-	return iter
-}
-
-func (i *Iterator[K, V]) Done() bool {
-	return len(i.stack) == 0
-}
-
-func (i *Iterator[K, V]) GetKey() K {
-	return i.currentEntry.K
-}
-
-func (i *Iterator[K, V]) GetValue() V {
-	return i.currentEntry.V
-}
-
-func (i *Iterator[K, V]) Next() {
-	for len(i.stack) > 0 {
-		frame := &i.stack[len(i.stack)-1]
-		switch frame.state {
-		case 0:
-			if frame.node == nil {
-				last := len(i.stack) - 1
-				i.stack[last] = iteratorStackFrame[K, V]{} // zero out
-				i.stack = i.stack[:last]                   // pop
-			} else {
-				frame.state = 1
-			}
-		case 1:
-			i.stack = append(i.stack, iteratorStackFrame[K, V]{node: frame.node.children[i.direction], state: 0})
-			frame.state = 2
-		case 2:
-			i.currentEntry = frame.node.entry
-			frame.state = 3
-			return
-		case 3:
-			// override frame - tail call optimisation
-			i.stack[len(i.stack)-1] = iteratorStackFrame[K, V]{node: frame.node.children[1-i.direction], state: 0}
-		}
-
-	}
-}
-
-func (i *Iterator[K, V]) seek(k K) {
-LOOP:
-	for {
-		frame := &i.stack[len(i.stack)-1]
-		if frame.node == nil {
-			last := len(i.stack) - 1
-			i.stack[last] = iteratorStackFrame[K, V]{} // zero out
-			i.stack = i.stack[:last]                   // pop
-			break LOOP
-		}
-		if i.direction == 0 && !(frame.node.entry.K.Less(k)) || (i.direction == 1 && !(k.Less(frame.node.entry.K))) {
-			i.stack = append(i.stack, iteratorStackFrame[K, V]{node: frame.node.children[i.direction], state: 2})
-		} else {
-			// override frame - tail call optimisation
-			i.stack[len(i.stack)-1] = iteratorStackFrame[K, V]{node: frame.node.children[1-i.direction], state: 2}
-		}
-	}
-	if len(i.stack) > 0 {
-		frame := &i.stack[len(i.stack)-1]
-		i.currentEntry = frame.node.entry
-		frame.state = 3
-	}
 }
