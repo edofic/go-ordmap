@@ -1,6 +1,9 @@
 package ordmap
 
-import "fmt"
+import (
+	"fmt"
+	"iter"
+)
 
 const MAX = 5 // must be odd
 
@@ -153,65 +156,53 @@ func (n *OrdMap) Len() int {
 	return n.len
 }
 
-func (n *OrdMap) Iterate() Iterator {
-	i := Iterator{
-		stack: []iteratorStackFrame{{n, 0, 0}},
-	}
-	i.Next()
-	return i
-}
-
-type iteratorStackFrame struct {
-	n     *OrdMap
-	state uint8 // 0 start, 1 leftmost done, 2 i-th entry done, 3 done
-	i     uint8
-}
-type Iterator struct {
-	stack []iteratorStackFrame
-	done  bool
-	Entry Entry
-}
-
-func (i *Iterator) Done() bool {
-	return i.done
-}
-
-func (i *Iterator) Next() {
-	i.done = true
-LOOP:
-	for len(i.stack) > 0 {
-		f := &i.stack[len(i.stack)-1]
-		switch f.state {
-		case 0:
-			if f.n == nil {
-				i.stack = i.stack[:len(i.stack)-1]
-				continue LOOP
+func (n *OrdMap) All() iter.Seq2[Key, Value] {
+	return func(yield func(Key, Value) bool) {
+		var step func(*OrdMap) bool
+		step = func(n *OrdMap) bool {
+			if n == nil {
+				return true
 			}
-			f.state = 1
-			i.stack = append(i.stack, iteratorStackFrame{f.n.subtrees[0], 0, 0})
-		case 1:
-			if f.i < f.n.order {
-				f.state = 2
-				i.Entry = f.n.entries[f.i]
-				i.done = false
-				break LOOP
-			} else {
-				f.state = 3
+			if !step(n.subtrees[0]) {
+				return false
 			}
-		case 2:
-			f.i += 1
-			f.state = 1
-			i.stack = append(i.stack, iteratorStackFrame{f.n.subtrees[f.i], 0, 0})
-		default:
-			i.stack = i.stack[:len(i.stack)-1]
+			for i := uint8(0); i < n.order; i++ {
+				if !yield(n.entries[i].K, n.entries[i].V) {
+					return false
+				}
+				if !step(n.subtrees[i+1]) {
+					return false
+				}
+			}
+			return true
 		}
+		step(n)
 	}
 }
 
-// TODO func (n *OrdMap) Len() int {}
-// TODO func (n *OrdMap) IterateFrom(k Key) Iterator {}
-// TODO func (n *OrdMap) IterateReverse() Iterator {}
-// TODO func (n *OrdMap) IterateReverseFrom(k Key) Iterator {}
+func (n *OrdMap) Backward() iter.Seq2[Key, Value] {
+	return func(yield func(Key, Value) bool) {
+		var step func(*OrdMap) bool
+		step = func(n *OrdMap) bool {
+			if n == nil {
+				return true
+			}
+			if !step(n.subtrees[n.order]) {
+				return false
+			}
+			for i := int(n.order) - 1; i >= 0; i-- {
+				if !yield(n.entries[i].K, n.entries[i].V) {
+					return false
+				}
+				if !step(n.subtrees[uint8(i)]) {
+					return false
+				}
+			}
+			return true
+		}
+		step(n)
+	}
+}
 
 func (n *OrdMap) removeStepMut(key Key) {
 OUTER:

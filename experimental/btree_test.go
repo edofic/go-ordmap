@@ -103,11 +103,25 @@ func (m *Model) checkElements() {
 }
 
 func (m *Model) checkIterator() {
-	entries := make([]Entry, 0, len(m.entries))
-	for i := m.tree.Iterate(); !i.Done(); i.Next() {
-		entries = append(entries, i.Entry)
+	allEntries := make([]Entry, 0, len(m.entries))
+	for k, v := range m.tree.All() {
+		allEntries = append(allEntries, Entry{k, v})
 	}
-	require.Equal(m.t, m.entries, entries)
+	require.Equal(m.t, m.entries, allEntries)
+
+	backwardEntries := make([]Entry, 0, len(m.entries))
+	for k, v := range m.tree.Backward() {
+		backwardEntries = append(backwardEntries, Entry{k, v})
+	}
+	reversed := make([]Entry, len(m.entries))
+	for i, e := range m.entries {
+		reversed[len(m.entries)-1-i] = e
+	}
+	require.Equal(m.t, reversed, backwardEntries)
+
+	if len(m.entries) == 0 {
+		return
+	}
 }
 
 func (m *Model) checkMinMax() {
