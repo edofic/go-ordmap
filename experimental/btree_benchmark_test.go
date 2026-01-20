@@ -35,9 +35,9 @@ func BenchmarkComparison(b *testing.B) {
 				})
 			})
 			b.Run("btree", func(b *testing.B) {
-				var tree *OrdMap
+				var tree *OrdMap[*myKey, int]
 				for i := 0; i < M; i++ {
-					tree = tree.Insert(intKey(i), struct{}{})
+					tree = tree.Insert(intKey(i), i)
 				}
 				b.Run("Get", func(b *testing.B) {
 					b.ReportAllocs()
@@ -48,7 +48,7 @@ func BenchmarkComparison(b *testing.B) {
 				b.Run("Insert", func(b *testing.B) {
 					b.ReportAllocs()
 					for i := 0; i < b.N; i++ {
-						tree.Insert(intKey(M+1), struct{}{})
+						tree.Insert(intKey(M+1), M+1)
 					}
 				})
 				b.Run("Remove", func(b *testing.B) {

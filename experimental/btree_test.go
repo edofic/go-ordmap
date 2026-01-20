@@ -11,12 +11,12 @@ import (
 
 type myKey int
 
-func (i *myKey) Cmp(i2 Key) int {
-	return int(*i) - int(*(i2.(*myKey)))
+func (i *myKey) Cmp(i2 *myKey) int {
+	return int(*i) - int(*i2)
 }
 
 // using a pointer based key where k1.Cmp(k2) == 0 does not imply k1 == k2 so we can fish out ==-based bugs with tests
-func intKey(i int) Key {
+func intKey(i int) *myKey {
 	k := myKey(i)
 	return &k
 }
@@ -29,15 +29,15 @@ func TestIntKey(t *testing.T) {
 
 type Model struct {
 	t       *testing.T
-	tree    *OrdMap
-	entries []Entry
+	tree    *OrdMap[*myKey, int]
+	entries []Entry[*myKey, int]
 	r       *rand.Rand
 }
 
 func NewModel(t *testing.T) *Model {
 	m := &Model{
 		t:       t,
-		entries: []Entry{},
+		entries: []Entry[*myKey, int]{},
 		r:       rand.New(rand.NewSource(0)),
 	}
 	m.checkInvariants()
@@ -53,15 +53,15 @@ func (m *Model) checkInvariants() {
 }
 
 func (m *Model) checkNodesValidity() {
-	var step func(*OrdMap)
-	step = func(n *OrdMap) {
+	var step func(*OrdMap[*myKey, int])
+	step = func(n *OrdMap[*myKey, int]) {
 		if n == nil {
 			return
 		}
 		require.GreaterOrEqual(m.t, n.order, uint8(1))
 		require.LessOrEqual(m.t, n.order, uint8(MAX))
 		for i := int(n.order); i < len(n.entries); i++ {
-			require.Equal(m.t, zeroEntry, n.entries[i], fmt.Sprintf("%s: %d %v", n.visual(), n.order, n.entries))
+			require.Equal(m.t, Entry[*myKey, int]{}, n.entries[i], fmt.Sprintf("%s: %d %v", n.visual(), n.order, n.entries))
 			require.Nil(m.t, n.subtrees[i+1])
 		}
 		children := 0
@@ -83,8 +83,8 @@ func (m *Model) checkNodesValidity() {
 }
 
 func (m *Model) checkBalance() {
-	var depth func(*OrdMap) uint8
-	depth = func(n *OrdMap) uint8 {
+	var depth func(*OrdMap[*myKey, int]) uint8
+	depth = func(n *OrdMap[*myKey, int]) uint8 {
 		if n == nil {
 			return 0
 		}
@@ -103,17 +103,17 @@ func (m *Model) checkElements() {
 }
 
 func (m *Model) checkIterator() {
-	allEntries := make([]Entry, 0, len(m.entries))
+	allEntries := make([]Entry[*myKey, int], 0, len(m.entries))
 	for k, v := range m.tree.All() {
-		allEntries = append(allEntries, Entry{k, v})
+		allEntries = append(allEntries, Entry[*myKey, int]{k, v})
 	}
 	require.Equal(m.t, m.entries, allEntries)
 
-	backwardEntries := make([]Entry, 0, len(m.entries))
+	backwardEntries := make([]Entry[*myKey, int], 0, len(m.entries))
 	for k, v := range m.tree.Backward() {
-		backwardEntries = append(backwardEntries, Entry{k, v})
+		backwardEntries = append(backwardEntries, Entry[*myKey, int]{k, v})
 	}
-	reversed := make([]Entry, len(m.entries))
+	reversed := make([]Entry[*myKey, int], len(m.entries))
 	for i, e := range m.entries {
 		reversed[len(m.entries)-1-i] = e
 	}
@@ -136,7 +136,7 @@ func (m *Model) checkMinMax() {
 	}
 }
 
-func (m *Model) Insert(key Key, value Value) {
+func (m *Model) Insert(key *myKey, value int) {
 	oldTree := m.tree
 	oldEntries := oldTree.Entries()
 
@@ -147,20 +147,20 @@ func (m *Model) Insert(key Key, value Value) {
 	require.Equal(m.t, oldEntries, oldTree.Entries(), "old tree changed") // persistence check
 }
 
-func (m *Model) insertEntry(key Key, value Value) {
+func (m *Model) insertEntry(key *myKey, value int) {
 	for i, e := range m.entries {
 		if e.K.Cmp(key) == 0 {
 			m.entries[i].V = value
 			return
 		}
 	}
-	m.entries = append(m.entries, Entry{key, value})
+	m.entries = append(m.entries, Entry[*myKey, int]{key, value})
 	sort.Slice(m.entries, func(i, j int) bool {
 		return m.entries[i].K.Cmp(m.entries[j].K) < 0
 	})
 }
 
-func (m *Model) Delete(key Key) {
+func (m *Model) Delete(key *myKey) {
 	oldTree := m.tree
 	oldEntries := oldTree.Entries()
 
@@ -171,7 +171,7 @@ func (m *Model) Delete(key Key) {
 	require.Equal(m.t, oldEntries, oldTree.Entries()) // persistence check
 }
 
-func (m *Model) deleteEntry(key Key) {
+func (m *Model) deleteEntry(key *myKey) {
 	for i, e := range m.entries {
 		if e.K.Cmp(key) == 0 {
 			copy(m.entries[i:], m.entries[i+1:])
@@ -197,7 +197,7 @@ func TestModel(t *testing.T) {
 		t.Run(fmt.Sprintf("delete_%03d", N), func(t *testing.T) {
 			m := NewModel(t)
 			for i := 0; i < N; i++ {
-				m.Insert(intKey(i), struct{}{})
+				m.Insert(intKey(i), i)
 			}
 			for i := 0; i < N; i++ {
 				k := m.r.Intn(N)
@@ -224,7 +224,7 @@ func TestModelGrowing(t *testing.T) {
 
 func TestAllFrom(t *testing.T) {
 	t.Run("empty_tree", func(t *testing.T) {
-		var tree *OrdMap
+		var tree *OrdMap[*myKey, int]
 		count := 0
 		for range tree.AllFrom(intKey(0)) {
 			count++
@@ -233,29 +233,29 @@ func TestAllFrom(t *testing.T) {
 	})
 
 	t.Run("single_element", func(t *testing.T) {
-		var tree *OrdMap
-		tree = tree.Insert(intKey(5), "value")
+		var tree *OrdMap[*myKey, int]
+		tree = tree.Insert(intKey(5), 5)
 
 		t.Run("start_below", func(t *testing.T) {
-			entries := []Entry{}
+			entries := []Entry[*myKey, int]{}
 			for k, v := range tree.AllFrom(intKey(0)) {
-				entries = append(entries, Entry{k, v})
+				entries = append(entries, Entry[*myKey, int]{k, v})
 			}
-			require.Equal(t, []Entry{{intKey(5), "value"}}, entries)
+			require.Equal(t, []Entry[*myKey, int]{{intKey(5), 5}}, entries)
 		})
 
 		t.Run("start_at", func(t *testing.T) {
-			entries := []Entry{}
+			entries := []Entry[*myKey, int]{}
 			for k, v := range tree.AllFrom(intKey(5)) {
-				entries = append(entries, Entry{k, v})
+				entries = append(entries, Entry[*myKey, int]{k, v})
 			}
-			require.Equal(t, []Entry{{intKey(5), "value"}}, entries)
+			require.Equal(t, []Entry[*myKey, int]{{intKey(5), 5}}, entries)
 		})
 
 		t.Run("start_above", func(t *testing.T) {
-			entries := []Entry{}
+			entries := []Entry[*myKey, int]{}
 			for k, v := range tree.AllFrom(intKey(10)) {
-				entries = append(entries, Entry{k, v})
+				entries = append(entries, Entry[*myKey, int]{k, v})
 			}
 			require.Empty(t, entries)
 		})
@@ -275,13 +275,13 @@ func TestAllFrom(t *testing.T) {
 				// Test starting from each key in the tree
 				for startKey := 0; startKey < N; startKey++ {
 					t.Run(fmt.Sprintf("start_at_%d", startKey), func(t *testing.T) {
-						entries := []Entry{}
+						entries := []Entry[*myKey, int]{}
 						for k, v := range m.tree.AllFrom(intKey(startKey)) {
-							entries = append(entries, Entry{k, v})
+							entries = append(entries, Entry[*myKey, int]{k, v})
 						}
-						expected := make([]Entry, 0, N-startKey)
+						expected := make([]Entry[*myKey, int], 0, N-startKey)
 						for i := startKey; i < N; i++ {
-							expected = append(expected, Entry{intKey(i), i})
+							expected = append(expected, Entry[*myKey, int]{intKey(i), i})
 						}
 						require.Equal(t, expected, entries)
 					})
@@ -290,13 +290,13 @@ func TestAllFrom(t *testing.T) {
 				// Test starting from keys between consecutive entries
 				for startKey := 0; startKey < N-1; startKey++ {
 					t.Run(fmt.Sprintf("start_between_%d_and_%d", startKey, startKey+1), func(t *testing.T) {
-						entries := []Entry{}
+						entries := []Entry[*myKey, int]{}
 						for k, v := range m.tree.AllFrom(intKey(startKey + 1)) {
-							entries = append(entries, Entry{k, v})
+							entries = append(entries, Entry[*myKey, int]{k, v})
 						}
-						expected := make([]Entry, 0, N-startKey-1)
+						expected := make([]Entry[*myKey, int], 0, N-startKey-1)
 						for i := startKey + 1; i < N; i++ {
-							expected = append(expected, Entry{intKey(i), i})
+							expected = append(expected, Entry[*myKey, int]{intKey(i), i})
 						}
 						require.Equal(t, expected, entries)
 					})
@@ -304,18 +304,18 @@ func TestAllFrom(t *testing.T) {
 
 				// Test starting before all entries
 				t.Run("start_before_all", func(t *testing.T) {
-					entries := []Entry{}
+					entries := []Entry[*myKey, int]{}
 					for k, v := range m.tree.AllFrom(intKey(-1)) {
-						entries = append(entries, Entry{k, v})
+						entries = append(entries, Entry[*myKey, int]{k, v})
 					}
 					require.Equal(t, m.entries, entries)
 				})
 
 				// Test starting after all entries
 				t.Run("start_after_all", func(t *testing.T) {
-					entries := []Entry{}
+					entries := []Entry[*myKey, int]{}
 					for k, v := range m.tree.AllFrom(intKey(N + 1)) {
-						entries = append(entries, Entry{k, v})
+						entries = append(entries, Entry[*myKey, int]{k, v})
 					}
 					require.Empty(t, entries)
 				})
@@ -349,9 +349,9 @@ func TestAllFrom(t *testing.T) {
 			}
 			startKey := m.entries[idx].K
 			t.Run(fmt.Sprintf("start_at_position_%d", idx), func(t *testing.T) {
-				entries := []Entry{}
+				entries := []Entry[*myKey, int]{}
 				for k, v := range m.tree.AllFrom(startKey) {
-					entries = append(entries, Entry{k, v})
+					entries = append(entries, Entry[*myKey, int]{k, v})
 				}
 				expected := m.entries[idx:]
 				require.Equal(t, expected, entries)
@@ -364,14 +364,14 @@ func TestAllFrom(t *testing.T) {
 				cmp := m.entries[i].K.Cmp(m.entries[i+1].K)
 				if cmp < 0 {
 					// Create a key between these two entries
-					val1 := int(*(m.entries[i].K.(*myKey)))
-					val2 := int(*(m.entries[i+1].K.(*myKey)))
+					val1 := int(*(m.entries[i].K))
+					val2 := int(*(m.entries[i+1].K))
 					if val2 > val1+1 {
 						midKey := intKey(val1 + 1)
 						t.Run(fmt.Sprintf("start_between_%d_and_%d", val1, val2), func(t *testing.T) {
-							entries := []Entry{}
+							entries := []Entry[*myKey, int]{}
 							for k, v := range m.tree.AllFrom(midKey) {
-								entries = append(entries, Entry{k, v})
+								entries = append(entries, Entry[*myKey, int]{k, v})
 							}
 							expected := m.entries[i+1:]
 							require.Equal(t, expected, entries)
@@ -385,7 +385,7 @@ func TestAllFrom(t *testing.T) {
 
 func TestBackwardFrom(t *testing.T) {
 	t.Run("empty_tree", func(t *testing.T) {
-		var tree *OrdMap
+		var tree *OrdMap[*myKey, int]
 		count := 0
 		for range tree.BackwardFrom(intKey(0)) {
 			count++
@@ -394,31 +394,31 @@ func TestBackwardFrom(t *testing.T) {
 	})
 
 	t.Run("single_element", func(t *testing.T) {
-		var tree *OrdMap
-		tree = tree.Insert(intKey(5), "value")
+		var tree *OrdMap[*myKey, int]
+		tree = tree.Insert(intKey(5), 5)
 
 		t.Run("start_below", func(t *testing.T) {
-			entries := []Entry{}
+			entries := []Entry[*myKey, int]{}
 			for k, v := range tree.BackwardFrom(intKey(0)) {
-				entries = append(entries, Entry{k, v})
+				entries = append(entries, Entry[*myKey, int]{k, v})
 			}
 			require.Empty(t, entries)
 		})
 
 		t.Run("start_at", func(t *testing.T) {
-			entries := []Entry{}
+			entries := []Entry[*myKey, int]{}
 			for k, v := range tree.BackwardFrom(intKey(5)) {
-				entries = append(entries, Entry{k, v})
+				entries = append(entries, Entry[*myKey, int]{k, v})
 			}
-			require.Equal(t, []Entry{{intKey(5), "value"}}, entries)
+			require.Equal(t, []Entry[*myKey, int]{{intKey(5), 5}}, entries)
 		})
 
 		t.Run("start_above", func(t *testing.T) {
-			entries := []Entry{}
+			entries := []Entry[*myKey, int]{}
 			for k, v := range tree.BackwardFrom(intKey(10)) {
-				entries = append(entries, Entry{k, v})
+				entries = append(entries, Entry[*myKey, int]{k, v})
 			}
-			require.Equal(t, []Entry{{intKey(5), "value"}}, entries)
+			require.Equal(t, []Entry[*myKey, int]{{intKey(5), 5}}, entries)
 		})
 	})
 
@@ -436,13 +436,13 @@ func TestBackwardFrom(t *testing.T) {
 				// Test starting from each key in the tree
 				for startKey := 0; startKey < N; startKey++ {
 					t.Run(fmt.Sprintf("start_at_%d", startKey), func(t *testing.T) {
-						entries := []Entry{}
+						entries := []Entry[*myKey, int]{}
 						for k, v := range m.tree.BackwardFrom(intKey(startKey)) {
-							entries = append(entries, Entry{k, v})
+							entries = append(entries, Entry[*myKey, int]{k, v})
 						}
-						expected := make([]Entry, 0, startKey+1)
+						expected := make([]Entry[*myKey, int], 0, startKey+1)
 						for i := startKey; i >= 0; i-- {
-							expected = append(expected, Entry{intKey(i), i})
+							expected = append(expected, Entry[*myKey, int]{intKey(i), i})
 						}
 						require.Equal(t, expected, entries)
 					})
@@ -451,13 +451,13 @@ func TestBackwardFrom(t *testing.T) {
 				// Test starting from keys between consecutive entries
 				for startKey := 0; startKey < N-1; startKey++ {
 					t.Run(fmt.Sprintf("start_between_%d_and_%d", startKey, startKey+1), func(t *testing.T) {
-						entries := []Entry{}
+						entries := []Entry[*myKey, int]{}
 						for k, v := range m.tree.BackwardFrom(intKey(startKey + 1)) {
-							entries = append(entries, Entry{k, v})
+							entries = append(entries, Entry[*myKey, int]{k, v})
 						}
-						expected := make([]Entry, 0, startKey+2)
+						expected := make([]Entry[*myKey, int], 0, startKey+2)
 						for i := startKey + 1; i >= 0; i-- {
-							expected = append(expected, Entry{intKey(i), i})
+							expected = append(expected, Entry[*myKey, int]{intKey(i), i})
 						}
 						require.Equal(t, expected, entries)
 					})
@@ -465,22 +465,22 @@ func TestBackwardFrom(t *testing.T) {
 
 				// Test starting before all entries
 				t.Run("start_before_all", func(t *testing.T) {
-					entries := []Entry{}
+					entries := []Entry[*myKey, int]{}
 					for k, v := range m.tree.BackwardFrom(intKey(-1)) {
-						entries = append(entries, Entry{k, v})
+						entries = append(entries, Entry[*myKey, int]{k, v})
 					}
 					require.Empty(t, entries)
 				})
 
 				// Test starting after all entries
 				t.Run("start_after_all", func(t *testing.T) {
-					entries := []Entry{}
+					entries := []Entry[*myKey, int]{}
 					for k, v := range m.tree.BackwardFrom(intKey(N + 1)) {
-						entries = append(entries, Entry{k, v})
+						entries = append(entries, Entry[*myKey, int]{k, v})
 					}
-					expected := make([]Entry, 0, N)
+					expected := make([]Entry[*myKey, int], 0, N)
 					for i := N - 1; i >= 0; i-- {
-						expected = append(expected, Entry{intKey(i), i})
+						expected = append(expected, Entry[*myKey, int]{intKey(i), i})
 					}
 					require.Equal(t, expected, entries)
 				})
@@ -514,11 +514,11 @@ func TestBackwardFrom(t *testing.T) {
 			}
 			startKey := m.entries[idx].K
 			t.Run(fmt.Sprintf("start_at_position_%d", idx), func(t *testing.T) {
-				entries := []Entry{}
+				entries := []Entry[*myKey, int]{}
 				for k, v := range m.tree.BackwardFrom(startKey) {
-					entries = append(entries, Entry{k, v})
+					entries = append(entries, Entry[*myKey, int]{k, v})
 				}
-				expected := make([]Entry, idx+1)
+				expected := make([]Entry[*myKey, int], idx+1)
 				for i := idx; i >= 0; i-- {
 					expected[idx-i] = m.entries[i]
 				}
@@ -532,16 +532,16 @@ func TestBackwardFrom(t *testing.T) {
 				cmp := m.entries[i].K.Cmp(m.entries[i+1].K)
 				if cmp < 0 {
 					// Create a key between these two entries
-					val1 := int(*(m.entries[i].K.(*myKey)))
-					val2 := int(*(m.entries[i+1].K.(*myKey)))
+					val1 := int(*(m.entries[i].K))
+					val2 := int(*(m.entries[i+1].K))
 					if val2 > val1+1 {
 						midKey := intKey(val1 + 1)
 						t.Run(fmt.Sprintf("start_between_%d_and_%d", val1, val2), func(t *testing.T) {
-							entries := []Entry{}
+							entries := []Entry[*myKey, int]{}
 							for k, v := range m.tree.BackwardFrom(midKey) {
-								entries = append(entries, Entry{k, v})
+								entries = append(entries, Entry[*myKey, int]{k, v})
 							}
-							expected := make([]Entry, i+1)
+							expected := make([]Entry[*myKey, int], i+1)
 							for j := i; j >= 0; j-- {
 								expected[i-j] = m.entries[j]
 							}

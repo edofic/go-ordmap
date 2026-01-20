@@ -7,28 +7,24 @@ import (
 
 const MAX = 5 // must be odd
 
-type Key interface {
-	Cmp(Key) int
+type Comparable[K any] interface {
+	Cmp(K) int
 }
 
-type Value interface{}
-
-type Entry struct {
-	K Key
-	V Value
+type Entry[K, V any] struct {
+	K K
+	V V
 }
 
-var zeroEntry Entry
-
-type OrdMap struct {
+type OrdMap[K Comparable[K], V any] struct {
 	order    uint8 // 1..MAX
 	height   uint8
 	len      int
-	entries  [MAX]Entry
-	subtrees [MAX + 1]*OrdMap
+	entries  [MAX]Entry[K, V]
+	subtrees [MAX + 1]*OrdMap[K, V]
 }
 
-func mkOrdMap(order uint8, entries [MAX]Entry, subtrees [MAX + 1]*OrdMap) *OrdMap {
+func mkOrdMap[K Comparable[K], V any](order uint8, entries [MAX]Entry[K, V], subtrees [MAX + 1]*OrdMap[K, V]) *OrdMap[K, V] {
 	height := uint8(1)
 	len := int(order)
 	for i := uint8(0); i <= order; i++ {
@@ -39,7 +35,7 @@ func mkOrdMap(order uint8, entries [MAX]Entry, subtrees [MAX + 1]*OrdMap) *OrdMa
 			len += subtrees[i].len
 		}
 	}
-	return &OrdMap{
+	return &OrdMap[K, V]{
 		order:    order,
 		height:   height,
 		len:      len,
@@ -48,10 +44,10 @@ func mkOrdMap(order uint8, entries [MAX]Entry, subtrees [MAX + 1]*OrdMap) *OrdMa
 	}
 }
 
-func (n *OrdMap) Entries() []Entry {
-	entries := make([]Entry, 0, n.Len())
-	var step func(n *OrdMap)
-	step = func(n *OrdMap) {
+func (n *OrdMap[K, V]) Entries() []Entry[K, V] {
+	entries := make([]Entry[K, V], 0, n.Len())
+	var step func(n *OrdMap[K, V])
+	step = func(n *OrdMap[K, V]) {
 		if n == nil {
 			return
 		}
@@ -65,7 +61,7 @@ func (n *OrdMap) Entries() []Entry {
 	return entries
 }
 
-func (n *OrdMap) Get(key Key) (value Value, ok bool) {
+func (n *OrdMap[K, V]) Get(key K) (value V, ok bool) {
 	finger := n
 OUTER:
 	for finger != nil {
@@ -85,17 +81,17 @@ OUTER:
 	return value, false
 }
 
-func (n *OrdMap) Insert(key Key, value Value) *OrdMap {
+func (n *OrdMap[K, V]) Insert(key K, value V) *OrdMap[K, V] {
 	if n == nil {
-		var entries [MAX]Entry
-		entries[0] = Entry{key, value}
-		return mkOrdMap(1, entries, [MAX + 1]*OrdMap{})
+		var entries [MAX]Entry[K, V]
+		entries[0] = Entry[K, V]{key, value}
+		return mkOrdMap(1, entries, [MAX + 1]*OrdMap[K, V]{})
 	}
 	if n.order == MAX { // full root, need to split
 		left, entry, right := n.split()
-		var entries [MAX]Entry
+		var entries [MAX]Entry[K, V]
 		entries[0] = entry
-		var subtrees [MAX + 1]*OrdMap
+		var subtrees [MAX + 1]*OrdMap[K, V]
 		subtrees[0] = left
 		subtrees[1] = right
 		n = mkOrdMap(1, entries, subtrees)
@@ -106,7 +102,7 @@ func (n *OrdMap) Insert(key Key, value Value) *OrdMap {
 	return n
 }
 
-func (n *OrdMap) Remove(key Key) *OrdMap {
+func (n *OrdMap[K, V]) Remove(key K) *OrdMap[K, V] {
 	if _, ok := n.Get(key); !ok {
 		return n
 	}
@@ -118,7 +114,7 @@ func (n *OrdMap) Remove(key Key) *OrdMap {
 	return n
 }
 
-func (n *OrdMap) Min() *Entry {
+func (n *OrdMap[K, V]) Min() *Entry[K, V] {
 	if n == nil {
 		return nil
 	}
@@ -130,7 +126,7 @@ func (n *OrdMap) Min() *Entry {
 	}
 }
 
-func (n *OrdMap) Max() *Entry {
+func (n *OrdMap[K, V]) Max() *Entry[K, V] {
 	if n == nil {
 		return nil
 	}
@@ -142,24 +138,24 @@ func (n *OrdMap) Max() *Entry {
 	}
 }
 
-func (n *OrdMap) Height() int {
+func (n *OrdMap[K, V]) Height() int {
 	if n == nil {
 		return 0
 	}
 	return int(n.height)
 }
 
-func (n *OrdMap) Len() int {
+func (n *OrdMap[K, V]) Len() int {
 	if n == nil {
 		return 0
 	}
 	return n.len
 }
 
-func (n *OrdMap) All() iter.Seq2[Key, Value] {
-	return func(yield func(Key, Value) bool) {
-		var step func(*OrdMap) bool
-		step = func(n *OrdMap) bool {
+func (n *OrdMap[K, V]) All() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		var step func(*OrdMap[K, V]) bool
+		step = func(n *OrdMap[K, V]) bool {
 			if n == nil {
 				return true
 			}
@@ -180,10 +176,10 @@ func (n *OrdMap) All() iter.Seq2[Key, Value] {
 	}
 }
 
-func (n *OrdMap) Backward() iter.Seq2[Key, Value] {
-	return func(yield func(Key, Value) bool) {
-		var step func(*OrdMap) bool
-		step = func(n *OrdMap) bool {
+func (n *OrdMap[K, V]) Backward() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		var step func(*OrdMap[K, V]) bool
+		step = func(n *OrdMap[K, V]) bool {
 			if n == nil {
 				return true
 			}
@@ -204,13 +200,13 @@ func (n *OrdMap) Backward() iter.Seq2[Key, Value] {
 	}
 }
 
-func (n *OrdMap) AllFrom(k Key) iter.Seq2[Key, Value] {
-	return func(yield func(Key, Value) bool) {
+func (n *OrdMap[K, V]) AllFrom(k K) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
 		// Phase 2: Unconditional Iterator
 		// Standard B-Tree traversal: LeftSub -> Entry -> RightSub
 		// No key comparisons performed here.
-		var iterate func(*OrdMap) bool
-		iterate = func(n *OrdMap) bool {
+		var iterate func(*OrdMap[K, V]) bool
+		iterate = func(n *OrdMap[K, V]) bool {
 			if n == nil {
 				return true
 			}
@@ -232,8 +228,8 @@ func (n *OrdMap) AllFrom(k Key) iter.Seq2[Key, Value] {
 
 		// Phase 1: Seek
 		// Skips subtrees and entries that are strictly smaller than k.
-		var seek func(*OrdMap) bool
-		seek = func(n *OrdMap) bool {
+		var seek func(*OrdMap[K, V]) bool
+		seek = func(n *OrdMap[K, V]) bool {
 			if n == nil {
 				return true
 			}
@@ -302,13 +298,13 @@ func (n *OrdMap) AllFrom(k Key) iter.Seq2[Key, Value] {
 	}
 }
 
-func (n *OrdMap) BackwardFrom(k Key) iter.Seq2[Key, Value] {
-	return func(yield func(Key, Value) bool) {
+func (n *OrdMap[K, V]) BackwardFrom(k K) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
 		// Phase 2: Unconditional Backward Iterator
 		// Traverses: Subtree[i+1] -> Entry[i] -> ... -> Subtree[0]
 		// No key comparisons performed here.
-		var iterate func(*OrdMap) bool
-		iterate = func(n *OrdMap) bool {
+		var iterate func(*OrdMap[K, V]) bool
+		iterate = func(n *OrdMap[K, V]) bool {
 			if n == nil {
 				return true
 			}
@@ -329,8 +325,8 @@ func (n *OrdMap) BackwardFrom(k Key) iter.Seq2[Key, Value] {
 
 		// Phase 1: Seek Backward
 		// Prunes entries and subtrees strictly > k
-		var seek func(*OrdMap) bool
-		seek = func(n *OrdMap) bool {
+		var seek func(*OrdMap[K, V]) bool
+		seek = func(n *OrdMap[K, V]) bool {
 			if n == nil {
 				return true
 			}
@@ -391,7 +387,7 @@ func (n *OrdMap) BackwardFrom(k Key) iter.Seq2[Key, Value] {
 	}
 }
 
-func (n *OrdMap) removeStepMut(key Key) {
+func (n *OrdMap[K, V]) removeStepMut(key K) {
 OUTER:
 	for {
 		if n.height == 1 {
@@ -401,7 +397,7 @@ OUTER:
 					for j := i; j < top; j++ {
 						n.entries[j] = n.entries[j+1]
 					}
-					n.entries[n.order-1] = zeroEntry
+					n.entries[n.order-1] = Entry[K, V]{}
 					n.order -= 1
 					return
 				}
@@ -442,7 +438,7 @@ OUTER:
 	}
 }
 
-func (n *OrdMap) insertNonFullMut(key Key, value Value) {
+func (n *OrdMap[K, V]) insertNonFullMut(key K, value V) {
 OUTER:
 	for {
 		for i := 0; i < int(n.order); i++ {
@@ -452,7 +448,7 @@ OUTER:
 			}
 		}
 		if n.height == 1 {
-			n.entries[n.order] = Entry{key, value}
+			n.entries[n.order] = Entry[K, V]{key, value}
 			n.order += 1
 			for i := int(n.order) - 1; i > 0; i-- {
 				if n.entries[i].K.Cmp(n.entries[i-1].K) < 0 {
@@ -501,7 +497,7 @@ OUTER:
 	}
 }
 
-func (n *OrdMap) ensureChildNotMinimal(index int) int {
+func (n *OrdMap[K, V]) ensureChildNotMinimal(index int) int {
 	if n.subtrees[index].order > 1 {
 		return index
 	}
@@ -517,17 +513,17 @@ func (n *OrdMap) ensureChildNotMinimal(index int) int {
 			copy(neighbour.subtrees[:], neighbour.subtrees[1:])
 			child.order += 1
 			neighbour.order -= 1
-			neighbour.entries[neighbour.order] = zeroEntry
+			neighbour.entries[neighbour.order] = Entry[K, V]{}
 			n.subtrees[0] = child
 			n.subtrees[1] = neighbour
 		} else { // right neighbour is minimal
 			child := n.subtrees[index]
 			neighbour := n.subtrees[1]
-			var entries [MAX]Entry
+			var entries [MAX]Entry[K, V]
 			copy(entries[:], child.entries[:child.order])
 			entries[child.order] = n.entries[index]
 			copy(entries[child.order+1:], neighbour.entries[:neighbour.order])
-			var subtrees [MAX + 1]*OrdMap
+			var subtrees [MAX + 1]*OrdMap[K, V]
 			copy(subtrees[:], child.subtrees[:child.order+1])
 			copy(subtrees[child.order+1:], neighbour.subtrees[:neighbour.order+1])
 			newChild := mkOrdMap(child.order+neighbour.order+1, entries, subtrees)
@@ -536,7 +532,7 @@ func (n *OrdMap) ensureChildNotMinimal(index int) int {
 			copy(n.entries[0:], n.entries[1:])
 			n.subtrees[n.order] = nil
 			n.order -= 1
-			n.entries[n.order] = zeroEntry
+			n.entries[n.order] = Entry[K, V]{}
 		}
 	} else {
 		child := n.subtrees[index]
@@ -554,13 +550,13 @@ func (n *OrdMap) ensureChildNotMinimal(index int) int {
 			n.entries[index-1] = neighbour.entries[neighbour.order-1]
 			neighbour.subtrees[neighbour.order] = nil
 			neighbour.order -= 1
-			neighbour.entries[neighbour.order] = zeroEntry
+			neighbour.entries[neighbour.order] = Entry[K, V]{}
 		} else {
-			var entries [MAX]Entry
+			var entries [MAX]Entry[K, V]
 			copy(entries[:], neighbour.entries[:neighbour.order])
 			entries[neighbour.order] = n.entries[index-1]
 			copy(entries[neighbour.order+1:], child.entries[:child.order])
-			var subtrees [MAX + 1]*OrdMap
+			var subtrees [MAX + 1]*OrdMap[K, V]
 			copy(subtrees[:], neighbour.subtrees[:neighbour.order+1])
 			copy(subtrees[neighbour.order+1:], child.subtrees[:child.order+1])
 			newChild := mkOrdMap(child.order+neighbour.order+1, entries, subtrees)
@@ -569,29 +565,29 @@ func (n *OrdMap) ensureChildNotMinimal(index int) int {
 			n.subtrees[index-1] = newChild
 			copy(n.entries[index-1:], n.entries[index:])
 			n.order -= 1
-			n.entries[n.order] = zeroEntry
+			n.entries[n.order] = Entry[K, V]{}
 			index -= 1
 		}
 	}
 	return index
 }
 
-func (n *OrdMap) split() (left *OrdMap, entry Entry, right *OrdMap) {
+func (n *OrdMap[K, V]) split() (left *OrdMap[K, V], entry Entry[K, V], right *OrdMap[K, V]) {
 	entry = n.entries[(MAX-1)/2]
-	var leftEntries [MAX]Entry
+	var leftEntries [MAX]Entry[K, V]
 	for i := 0; i < (MAX-1)/2; i++ {
 		leftEntries[i] = n.entries[i]
 	}
-	var leftSubtrees [MAX + 1]*OrdMap
+	var leftSubtrees [MAX + 1]*OrdMap[K, V]
 	for i := 0; i <= (MAX-1)/2; i++ {
 		leftSubtrees[i] = n.subtrees[i]
 	}
 	left = mkOrdMap((MAX-1)/2, leftEntries, leftSubtrees)
-	var rightEntries [MAX]Entry
+	var rightEntries [MAX]Entry[K, V]
 	for i := (MAX + 1) / 2; i < MAX; i++ {
 		rightEntries[i-(MAX+1)/2] = n.entries[i]
 	}
-	var rightSubtrees [MAX + 1]*OrdMap
+	var rightSubtrees [MAX + 1]*OrdMap[K, V]
 	for i := (MAX + 1) / 2; i <= MAX; i++ {
 		rightSubtrees[i-(MAX+1)/2] = n.subtrees[i]
 	}
@@ -599,7 +595,7 @@ func (n *OrdMap) split() (left *OrdMap, entry Entry, right *OrdMap) {
 	return
 }
 
-func (n *OrdMap) popMinMut() Entry {
+func (n *OrdMap[K, V]) popMinMut() Entry[K, V] {
 OUTER:
 	for {
 		if n.height == 1 {
@@ -608,7 +604,7 @@ OUTER:
 				n.entries[i-1] = n.entries[i]
 			}
 			n.order -= 1
-			n.entries[n.order] = zeroEntry
+			n.entries[n.order] = Entry[K, V]{}
 			return e
 		}
 		_ = n.ensureChildNotMinimal(0)
@@ -618,11 +614,11 @@ OUTER:
 	}
 }
 
-func (n OrdMap) dup() *OrdMap {
+func (n OrdMap[K, V]) dup() *OrdMap[K, V] {
 	return &n
 }
 
-func (n *OrdMap) visual() string {
+func (n *OrdMap[K, V]) visual() string {
 	if n == nil {
 		return "_"
 	}
