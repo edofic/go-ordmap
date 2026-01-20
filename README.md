@@ -75,6 +75,12 @@ func main() {
 		fmt.Println(k, v)
 	}
 	fmt.Println(m2.Min(), m2.Max()) // access the extremes
+
+    // Range iteration: Start iterating from a specific key
+    // This is useful for prefix scans or finding items >= K
+    for k, v := range m2.From(2) {
+        fmt.Println("From 2:", k, v)
+    }
 }
 ```
 
@@ -106,7 +112,15 @@ for k, v := range m.All() {
 }
 ```
 
-You will need to provide the `Less` method on your key type
+You will need to provide the `Less` method on your key type so the map knows how to
+order itself. Or if you want to use one of the builtin types (e.g. `int`) you
+can use `NewBuiltin` which only takes supported types.
+
+```go
+func (k MyKey) Less(k2 MyKey) bool {
+    ...
+}
+```
 
 ```go
 func (k MyKey) Less(k2 MyKey) bool {
