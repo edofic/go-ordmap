@@ -20,12 +20,33 @@ var zeroEntry Entry
 type OrdMap struct {
 	order    uint8 // 1..MAX
 	height   uint8
+	len      int
 	entries  [MAX]Entry
 	subtrees [MAX + 1]*OrdMap
 }
 
+func mkOrdMap(order uint8, entries [MAX]Entry, subtrees [MAX + 1]*OrdMap) *OrdMap {
+	height := uint8(1)
+	len := int(order)
+	for i := uint8(0); i <= order; i++ {
+		if subtrees[i] != nil {
+			if subtrees[i].height >= height {
+				height = subtrees[i].height + 1
+			}
+			len += subtrees[i].len
+		}
+	}
+	return &OrdMap{
+		order:    order,
+		height:   height,
+		len:      len,
+		entries:  entries,
+		subtrees: subtrees,
+	}
+}
+
 func (n *OrdMap) Entries() []Entry {
-	entries := make([]Entry, 0) // TODO preallocate when Len is implemented
+	entries := make([]Entry, 0, n.Len())
 	var step func(n *OrdMap)
 	step = func(n *OrdMap) {
 		if n == nil {
@@ -63,19 +84,18 @@ OUTER:
 
 func (n *OrdMap) Insert(key Key, value Value) *OrdMap {
 	if n == nil {
-		n = &OrdMap{order: 1, height: 1}
-		n.entries[0] = Entry{key, value}
-		return n
+		var entries [MAX]Entry
+		entries[0] = Entry{key, value}
+		return mkOrdMap(1, entries, [MAX + 1]*OrdMap{})
 	}
 	if n.order == MAX { // full root, need to split
 		left, entry, right := n.split()
-		n = &OrdMap{
-			order:  1,
-			height: left.height + 1,
-		}
-		n.entries[0] = entry
-		n.subtrees[0] = left
-		n.subtrees[1] = right
+		var entries [MAX]Entry
+		entries[0] = entry
+		var subtrees [MAX + 1]*OrdMap
+		subtrees[0] = left
+		subtrees[1] = right
+		n = mkOrdMap(1, entries, subtrees)
 	} else {
 		n = n.dup()
 	}
@@ -124,6 +144,13 @@ func (n *OrdMap) Height() int {
 		return 0
 	}
 	return int(n.height)
+}
+
+func (n *OrdMap) Len() int {
+	if n == nil {
+		return 0
+	}
+	return n.len
 }
 
 func (n *OrdMap) Iterate() Iterator {
@@ -318,15 +345,14 @@ func (n *OrdMap) ensureChildNotMinimal(index int) int {
 		} else { // right neighbour is minimal
 			child := n.subtrees[index]
 			neighbour := n.subtrees[1]
-			newChild := &OrdMap{
-				order:  child.order + neighbour.order + 1,
-				height: child.height, // == neighbour.height
-			}
-			copy(newChild.entries[:], child.entries[:child.order])
-			newChild.entries[child.order] = n.entries[index]
-			copy(newChild.entries[child.order+1:], neighbour.entries[:neighbour.order])
-			copy(newChild.subtrees[:], child.subtrees[:child.order+1])
-			copy(newChild.subtrees[child.order+1:], neighbour.subtrees[:neighbour.order+1])
+			var entries [MAX]Entry
+			copy(entries[:], child.entries[:child.order])
+			entries[child.order] = n.entries[index]
+			copy(entries[child.order+1:], neighbour.entries[:neighbour.order])
+			var subtrees [MAX + 1]*OrdMap
+			copy(subtrees[:], child.subtrees[:child.order+1])
+			copy(subtrees[child.order+1:], neighbour.subtrees[:neighbour.order+1])
+			newChild := mkOrdMap(child.order+neighbour.order+1, entries, subtrees)
 			n.subtrees[index] = newChild
 			copy(n.subtrees[1:], n.subtrees[2:])
 			copy(n.entries[0:], n.entries[1:])
@@ -352,15 +378,14 @@ func (n *OrdMap) ensureChildNotMinimal(index int) int {
 			neighbour.order -= 1
 			neighbour.entries[neighbour.order] = zeroEntry
 		} else {
-			newChild := &OrdMap{
-				order:  child.order + neighbour.order + 1,
-				height: child.height, // == neighbour.height
-			}
-			copy(newChild.entries[:], neighbour.entries[:neighbour.order])
-			newChild.entries[neighbour.order] = n.entries[index-1]
-			copy(newChild.entries[neighbour.order+1:], child.entries[:child.order])
-			copy(newChild.subtrees[:], neighbour.subtrees[:neighbour.order+1])
-			copy(newChild.subtrees[neighbour.order+1:], child.subtrees[:child.order+1])
+			var entries [MAX]Entry
+			copy(entries[:], neighbour.entries[:neighbour.order])
+			entries[neighbour.order] = n.entries[index-1]
+			copy(entries[neighbour.order+1:], child.entries[:child.order])
+			var subtrees [MAX + 1]*OrdMap
+			copy(subtrees[:], neighbour.subtrees[:neighbour.order+1])
+			copy(subtrees[neighbour.order+1:], child.subtrees[:child.order+1])
+			newChild := mkOrdMap(child.order+neighbour.order+1, entries, subtrees)
 			copy(n.subtrees[index-1:], n.subtrees[index:])
 			n.subtrees[n.order] = nil
 			n.subtrees[index-1] = newChild
@@ -375,26 +400,24 @@ func (n *OrdMap) ensureChildNotMinimal(index int) int {
 
 func (n *OrdMap) split() (left *OrdMap, entry Entry, right *OrdMap) {
 	entry = n.entries[(MAX-1)/2]
-	left = &OrdMap{
-		order:  (MAX - 1) / 2,
-		height: n.height,
-	}
+	var leftEntries [MAX]Entry
 	for i := 0; i < (MAX-1)/2; i++ {
-		left.entries[i] = n.entries[i]
+		leftEntries[i] = n.entries[i]
 	}
+	var leftSubtrees [MAX + 1]*OrdMap
 	for i := 0; i <= (MAX-1)/2; i++ {
-		left.subtrees[i] = n.subtrees[i]
+		leftSubtrees[i] = n.subtrees[i]
 	}
-	right = &OrdMap{
-		order:  (MAX - 1) / 2,
-		height: n.height,
-	}
+	left = mkOrdMap((MAX-1)/2, leftEntries, leftSubtrees)
+	var rightEntries [MAX]Entry
 	for i := (MAX + 1) / 2; i < MAX; i++ {
-		right.entries[i-(MAX+1)/2] = n.entries[i]
+		rightEntries[i-(MAX+1)/2] = n.entries[i]
 	}
+	var rightSubtrees [MAX + 1]*OrdMap
 	for i := (MAX + 1) / 2; i <= MAX; i++ {
-		right.subtrees[i-(MAX+1)/2] = n.subtrees[i]
+		rightSubtrees[i-(MAX+1)/2] = n.subtrees[i]
 	}
+	right = mkOrdMap((MAX-1)/2, rightEntries, rightSubtrees)
 	return
 }
 
