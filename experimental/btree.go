@@ -110,7 +110,7 @@ func (n *OrdMap[K, V]) Remove(key K) *OrdMap[K, V] {
 	if _, ok := n.Get(key); !ok {
 		return n
 	}
-	if n.height == 1 && n.order == 1 && n.entries[0].K.Less(key) == false && key.Less(n.entries[0].K) == false {
+	if n.height == 1 && n.order == 1 && !n.entries[0].K.Less(key) && !key.Less(n.entries[0].K) {
 		return nil
 	}
 	n = n.dup()
@@ -392,7 +392,7 @@ OUTER:
 	for {
 		if n.height == 1 {
 			for i := 0; i < int(n.order); i++ {
-				if n.entries[i].K.Less(key) == false && key.Less(n.entries[i].K) == false {
+				if !n.entries[i].K.Less(key) && !key.Less(n.entries[i].K) {
 					top := int(n.order) - 1
 					for j := i; j < top; j++ {
 						n.entries[j] = n.entries[j+1]
@@ -406,7 +406,7 @@ OUTER:
 		} else {
 			index := int(n.order)
 			for i := 0; i < int(n.order); i++ {
-				if n.entries[i].K.Less(key) == false && key.Less(n.entries[i].K) == false { // inner delete
+				if !n.entries[i].K.Less(key) && !key.Less(n.entries[i].K) { // inner delete
 					index = n.ensureChildNotMinimal(i + 1)
 					if n.order == 0 { // degenerated, need to drop a level
 						*n = *n.subtrees[0]
@@ -442,7 +442,7 @@ func (n *OrdMap[K, V]) insertNonFullMut(key K, value V) {
 OUTER:
 	for {
 		for i := 0; i < int(n.order); i++ {
-			if n.entries[i].K.Less(key) == false && key.Less(n.entries[i].K) == false {
+			if !n.entries[i].K.Less(key) && !key.Less(n.entries[i].K) {
 				n.entries[i].V = value
 				return
 			}
