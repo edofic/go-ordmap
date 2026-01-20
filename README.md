@@ -6,9 +6,7 @@
 
 Persistent generic ordered maps for Go.
 
-This is `v2` which is based on 1.18 generics. If you can't (or don't want to)
-use generics there is still `v1` which uses code generation. See [v1
-branch](https://github.com/edofic/go-ordmap/tree/v1).
+This is `v2` which utilizes Go 1.23+ iterators (`iter.Seq2`) for efficient and idiomatic collection traversal. If you can't (or don't want to) use generics or Go 1.23, there is still `v1` which uses code generation. See [v1 branch](https://github.com/edofic/go-ordmap/tree/v1).
 
 ## Rationale
 
@@ -29,7 +27,7 @@ is beneficial when you have many concurrent readers - your writer can advance
 while the readers still traverse the old versions (kind of similar to
 [MVCC](https://en.wikipedia.org/wiki/Multiversion_concurrency_control))
 
-In order to facilitate safe API and efficient internalization the this module uses type parameters and thus requires go 1.23+.
+In order to facilitate safe API and efficient internalization this module uses type parameters and thus requires go 1.23+.
 
 ## Usage
 
@@ -82,9 +80,33 @@ func main() {
 
 See [examples](https://github.com/edofic/go-ordmap/blob/v2/examples) for more.
 
-You will need to provide the `Less` method on your  - so the map knows how to
-order itself. Or if you want to use one of the builtin types (e.g. `int`) you
-can use `NewBulitin` which only takes supported types.`
+### Generational Map
+
+For use cases with high churn (many short-lived items), the `generational` package provides an optimized wrapper. It uses a "Young" and "Old" generation approach (inspired by Generational GC and LSM-trees).
+
+- **Writes**: Extremely fast (only affects the small Young generation).
+- **Reads**: Slightly slower (checks both generations).
+- **Iteration**: Performed via a live merge of both generations.
+
+#### Usage
+
+```go
+import "github.com/edofic/go-ordmap/v2/generational"
+
+// Create a map with a young generation limit of 1000
+m := generational.New[MyKey, MyValue](1000)
+
+m = m.Insert(k, v)
+m = m.Remove(k)
+val, ok := m.Get(k)
+
+// Iterators work just like the standard OrdMap
+for k, v := range m.All() {
+    // ...
+}
+```
+
+You will need to provide the `Less` method on your key type
 
 ```go
 func (k MyKey) Less(k2 MyKey) bool {
