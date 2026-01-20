@@ -308,148 +308,161 @@ func (node *Node[K, V]) Max() *Entry[K, V] {
 
 func (node *Node[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		if node == nil {
-			return
-		}
-		var preallocated [20]iteratorStackFrame[K, V]
-		stack := preallocated[:0]
-		stack = append(stack, iteratorStackFrame[K, V]{node: node, state: 0})
-		for len(stack) > 0 {
-			frame := &stack[len(stack)-1]
-			switch frame.state {
-			case 0:
-				if frame.node == nil {
-					stack = stack[:len(stack)-1]
-				} else {
-					frame.state = 1
-				}
-			case 1:
-				stack = append(stack, iteratorStackFrame[K, V]{node: frame.node.children[0], state: 0})
-				frame.state = 2
-			case 2:
-				if !yield(frame.node.entry.K, frame.node.entry.V) {
-					return
-				}
-				frame.state = 3
-			case 3:
-				stack[len(stack)-1] = iteratorStackFrame[K, V]{node: frame.node.children[1], state: 0}
+		var step func(*Node[K, V]) bool
+		step = func(node *Node[K, V]) bool {
+			if node == nil {
+				return true
 			}
+			if !step(node.children[0]) {
+				return false
+			}
+			if !yield(node.entry.K, node.entry.V) {
+				return false
+			}
+			if !step(node.children[1]) {
+				return false
+			}
+			return true
 		}
+		step(node)
 	}
 }
 
 func (node *Node[K, V]) Backward() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		if node == nil {
-			return
-		}
-		var preallocated [20]iteratorStackFrame[K, V]
-		stack := preallocated[:0]
-		stack = append(stack, iteratorStackFrame[K, V]{node: node, state: 0})
-		for len(stack) > 0 {
-			frame := &stack[len(stack)-1]
-			switch frame.state {
-			case 0:
-				if frame.node == nil {
-					stack = stack[:len(stack)-1]
-				} else {
-					frame.state = 1
-				}
-			case 1:
-				stack = append(stack, iteratorStackFrame[K, V]{node: frame.node.children[1], state: 0})
-				frame.state = 2
-			case 2:
-				if !yield(frame.node.entry.K, frame.node.entry.V) {
-					return
-				}
-				frame.state = 3
-			case 3:
-				stack[len(stack)-1] = iteratorStackFrame[K, V]{node: frame.node.children[0], state: 0}
+		var step func(*Node[K, V]) bool
+		step = func(node *Node[K, V]) bool {
+			if node == nil {
+				return true
 			}
+			if !step(node.children[1]) {
+				return false
+			}
+			if !yield(node.entry.K, node.entry.V) {
+				return false
+			}
+			if !step(node.children[0]) {
+				return false
+			}
+			return true
 		}
+		step(node)
 	}
 }
 
 func (node *Node[K, V]) From(k K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		if node == nil {
-			return
-		}
-		var preallocated [20]iteratorStackFrame[K, V]
-		stack := preallocated[:0]
-		stack = append(stack, iteratorStackFrame[K, V]{node: node, state: 0})
-		foundStart := false
-		for len(stack) > 0 {
-			frame := &stack[len(stack)-1]
-			switch frame.state {
-			case 0:
-				if frame.node == nil {
-					stack = stack[:len(stack)-1]
-				} else {
-					frame.state = 1
-				}
-			case 1:
-				stack = append(stack, iteratorStackFrame[K, V]{node: frame.node.children[0], state: 0})
-				frame.state = 2
-			case 2:
-				if !foundStart {
-					if k.Less(frame.node.entry.K) {
-						foundStart = true
-					} else if frame.node.entry.K.Less(k) {
-						frame.state = 3
-						continue
-					} else {
-						foundStart = true
-					}
-				}
-				if foundStart {
-					if !yield(frame.node.entry.K, frame.node.entry.V) {
-						return
-					}
-				}
-				frame.state = 3
-			case 3:
-				stack[len(stack)-1] = iteratorStackFrame[K, V]{node: frame.node.children[1], state: 0}
+		// Phase 2: Unconditional Traversal
+		// Used once we are strictly inside the valid range.
+		// No comparisons against 'k' are performed here.
+		var iterate func(*Node[K, V]) bool
+		iterate = func(n *Node[K, V]) bool {
+			if n == nil {
+				return true
 			}
+			if !iterate(n.children[0]) {
+				return false
+			}
+			if !yield(n.entry.K, n.entry.V) {
+				return false
+			}
+			return iterate(n.children[1])
 		}
+
+		// Phase 1: Seeking the Boundary
+		// Performs comparisons to prune left subtrees.
+		var seek func(*Node[K, V]) bool
+		seek = func(n *Node[K, V]) bool {
+			if n == nil {
+				return true
+			}
+
+			// If n < k:
+			// This node and its entire left subtree are too small.
+			// Skip them and continue seeking in the right subtree.
+			if n.entry.K.Less(k) {
+				return seek(n.children[1])
+			}
+
+			// If n >= k:
+			// 1. The boundary might be in the left subtree, so we 'seek' left.
+			if !seek(n.children[0]) {
+				return false
+			}
+
+			// 2. This node is valid.
+			if !yield(n.entry.K, n.entry.V) {
+				return false
+			}
+
+			// 3. OPTIMIZATION:
+			// Since n >= k, all nodes in the right subtree are > k.
+			// Switch to unconditional 'iterate' (no comparisons).
+			return iterate(n.children[1])
+		}
+
+		seek(node)
 	}
 }
 
 func (node *Node[K, V]) BackwardFrom(k K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		if node == nil {
-			return
-		}
-		var preallocated [20]iteratorStackFrame[K, V]
-		stack := preallocated[:0]
-		stack = append(stack, iteratorStackFrame[K, V]{node: node, state: 0})
-		for len(stack) > 0 {
-			frame := &stack[len(stack)-1]
-			switch frame.state {
-			case 0:
-				if frame.node == nil {
-					stack = stack[:len(stack)-1]
-				} else {
-					frame.state = 1
-				}
-			case 1:
-				stack = append(stack, iteratorStackFrame[K, V]{node: frame.node.children[1], state: 0})
-				frame.state = 2
-			case 2:
-				if !k.Less(frame.node.entry.K) {
-					if !yield(frame.node.entry.K, frame.node.entry.V) {
-						return
-					}
-				}
-				frame.state = 3
-			case 3:
-				stack[len(stack)-1] = iteratorStackFrame[K, V]{node: frame.node.children[0], state: 0}
+		// Phase 2: Unconditional Reverse Traversal
+		// Used for left subtrees of valid nodes (since Left < Node <= k).
+		// Traverses: Right -> Node -> Left
+		var iterate func(*Node[K, V]) bool
+		iterate = func(n *Node[K, V]) bool {
+			if n == nil {
+				return true
 			}
+			// 1. Right (Largest)
+			if !iterate(n.children[1]) {
+				return false
+			}
+			// 2. Current
+			if !yield(n.entry.K, n.entry.V) {
+				return false
+			}
+			// 3. Left (Smallest)
+			return iterate(n.children[0])
 		}
-	}
-}
 
-type iteratorStackFrame[K Comparable[K], V any] struct {
-	node  *Node[K, V]
-	state int8
+		// Phase 1: Seeking the Boundary
+		// Performs comparisons to prune Right subtrees.
+		var seek func(*Node[K, V]) bool
+		seek = func(n *Node[K, V]) bool {
+			if n == nil {
+				return true
+			}
+
+			// Check if Node > k.
+			// (Assuming standard Less interface: k < n implies n > k)
+			if k.Less(n.entry.K) {
+				// This node is too big. The right subtree is even bigger.
+				// Skip everything here and search the left subtree.
+				return seek(n.children[0])
+			}
+
+			// If we are here, n <= k.
+
+			// 1. The boundary might be deep in the Right subtree.
+			//    (There could be nodes > n but still <= k)
+			if !seek(n.children[1]) {
+				return false
+			}
+
+			// 2. This node is valid.
+			if !yield(n.entry.K, n.entry.V) {
+				return false
+			}
+
+			// 3. OPTIMIZATION:
+			// Since n <= k, all nodes in the Left subtree are < n.
+			// Therefore, they are all < k.
+			// Switch to unconditional 'iterate'.
+			return iterate(n.children[0])
+		}
+
+		seek(node)
+	}
 }
