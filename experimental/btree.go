@@ -204,6 +204,193 @@ func (n *OrdMap) Backward() iter.Seq2[Key, Value] {
 	}
 }
 
+func (n *OrdMap) AllFrom(k Key) iter.Seq2[Key, Value] {
+	return func(yield func(Key, Value) bool) {
+		// Phase 2: Unconditional Iterator
+		// Standard B-Tree traversal: LeftSub -> Entry -> RightSub
+		// No key comparisons performed here.
+		var iterate func(*OrdMap) bool
+		iterate = func(n *OrdMap) bool {
+			if n == nil {
+				return true
+			}
+			// 1. Traverse first subtree
+			if !iterate(n.subtrees[0]) {
+				return false
+			}
+			// 2. Traverse interleaved entries and subsequent subtrees
+			for i := 0; i < int(n.order); i++ {
+				if !yield(n.entries[i].K, n.entries[i].V) {
+					return false
+				}
+				if !iterate(n.subtrees[i+1]) {
+					return false
+				}
+			}
+			return true
+		}
+
+		// Phase 1: Seek
+		// Skips subtrees and entries that are strictly smaller than k.
+		var seek func(*OrdMap) bool
+		seek = func(n *OrdMap) bool {
+			if n == nil {
+				return true
+			}
+
+			// Iterate through the entries in this node
+			for i := 0; i < int(n.order); i++ {
+				entry := n.entries[i]
+
+				// Compare k vs entry.K
+				cmp := k.Cmp(entry.K)
+
+				// Case 1: k > entry.K
+				// The entry is strictly smaller than k.
+				// Implication: subtree[i] is also strictly smaller.
+				// Action: Skip both subtree[i] and entry[i].
+				if cmp > 0 {
+					continue
+				}
+
+				// Case 2: k <= entry.K
+				// We found the crossover point!
+				// entry[i] is the first entry in this node that is valid.
+
+				// A. The boundary might be inside the left subtree (subtree[i]).
+				//    It might contain keys >= k.
+				if !seek(n.subtrees[i]) {
+					return false
+				}
+
+				// B. Yield the current valid entry.
+				if !yield(entry.K, entry.V) {
+					return false
+				}
+
+				// C. OPTIMIZATION SWITCH
+				// Since entry[i] >= k, we know subtree[i+1] and ALL subsequent
+				// entries in this node are definitely > k.
+				// We switch to unconditional 'iterate' for the rest of this node.
+
+				// C1. Iterate the immediate right subtree
+				if !iterate(n.subtrees[i+1]) {
+					return false
+				}
+
+				// C2. Flush the remaining entries and subtrees in this node
+				for j := i + 1; j < int(n.order); j++ {
+					if !yield(n.entries[j].K, n.entries[j].V) {
+						return false
+					}
+					if !iterate(n.subtrees[j+1]) {
+						return false
+					}
+				}
+
+				// We have fully processed this node and its relevant children.
+				return true
+			}
+
+			// Case 3: We scanned all entries and all were < k.
+			// However, valid nodes might still exist in the very last subtree
+			// (the one to the right of the last entry).
+			return seek(n.subtrees[n.order])
+		}
+
+		seek(n)
+	}
+}
+
+func (n *OrdMap) BackwardFrom(k Key) iter.Seq2[Key, Value] {
+	return func(yield func(Key, Value) bool) {
+		// Phase 2: Unconditional Backward Iterator
+		// Traverses: Subtree[i+1] -> Entry[i] -> ... -> Subtree[0]
+		// No key comparisons performed here.
+		var iterate func(*OrdMap) bool
+		iterate = func(n *OrdMap) bool {
+			if n == nil {
+				return true
+			}
+			// Loop from last entry to first
+			for i := int(n.order) - 1; i >= 0; i-- {
+				// 1. Visit right child of entry i
+				if !iterate(n.subtrees[i+1]) {
+					return false
+				}
+				// 2. Visit entry i
+				if !yield(n.entries[i].K, n.entries[i].V) {
+					return false
+				}
+			}
+			// 3. Visit leftmost child
+			return iterate(n.subtrees[0])
+		}
+
+		// Phase 1: Seek Backward
+		// Prunes entries and subtrees strictly > k
+		var seek func(*OrdMap) bool
+		seek = func(n *OrdMap) bool {
+			if n == nil {
+				return true
+			}
+
+			// Loop backwards: check largest entries first
+			for i := int(n.order) - 1; i >= 0; i-- {
+				entry := n.entries[i]
+				cmp := k.Cmp(entry.K)
+
+				// Case 1: k < entry.K
+				// This entry is too big.
+				// Implication: The subtree to its right (subtrees[i+1]) is even bigger.
+				// Action: Skip both. Continue loop to check smaller entries.
+				if cmp < 0 {
+					continue
+				}
+
+				// Case 2: k >= entry.K
+				// This entry is valid (<= k).
+
+				// A. The boundary is likely inside the right child (subtrees[i+1]).
+				//    (It may contain values > entry.K but <= k)
+				if !seek(n.subtrees[i+1]) {
+					return false
+				}
+
+				// B. Yield the current valid entry
+				if !yield(entry.K, entry.V) {
+					return false
+				}
+
+				// C. OPTIMIZATION SWITCH
+				// Since entry[i] <= k, everything to the LEFT of this entry
+				// (subtree[i], entry[i-1]...) is strictly smaller than k.
+				// Switch to unconditional 'iterate' for the rest of this node.
+
+				// C1. Process remaining pairs (Subtree -> Entry) to the left
+				for j := i - 1; j >= 0; j-- {
+					if !iterate(n.subtrees[j+1]) { // Logic matches subtrees[i] relative to entry[i] from outer loop context
+						return false
+					}
+					if !yield(n.entries[j].K, n.entries[j].V) {
+						return false
+					}
+				}
+
+				// C2. Process the final leftmost child
+				return iterate(n.subtrees[0])
+			}
+
+			// Case 3: We scanned all entries and they were all > k (too big).
+			// However, the very first subtree (subtrees[0]) contains values
+			// smaller than entry[0], so it might contain valid items.
+			return seek(n.subtrees[0])
+		}
+
+		seek(n)
+	}
+}
+
 func (n *OrdMap) removeStepMut(key Key) {
 OUTER:
 	for {
