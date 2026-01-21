@@ -32,7 +32,7 @@ In order to facilitate safe API and efficient internalization this module uses t
 ## Usage
 
 ```sh
-go get github.com/edofic/go-ordmap/v2@v2.0.0-beta2
+go get github.com/edofic/go-ordmap/v2@latest
 ```
 
 You only need to remember to always assign the returned value of all
