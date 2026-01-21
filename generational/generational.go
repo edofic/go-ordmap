@@ -78,6 +78,19 @@ func (m *Map[K, V]) Insert(key K, value V) *Map[K, V] {
 // It inserts a tombstone into the young generation, effectively masking the key
 // from the old generation.
 func (m *Map[K, V]) Remove(key K) *Map[K, V] {
+	_, inOld := m.old.Get(key)
+	if !inOld {
+		// If it's not in old, we can just remove it from young.
+		// If it's in young, it will be removed.
+		// If it's not in young, nothing happens (which is correct).
+		young := m.young.Remove(key)
+		return &Map[K, V]{
+			young: young,
+			old:   m.old,
+			limit: m.limit,
+		}
+	}
+	// It is in old, so we must mask it with a tombstone in young.
 	op := operation[V]{delete: true}
 	young := m.young.Insert(key, op)
 	if young.Len() >= m.limit {
