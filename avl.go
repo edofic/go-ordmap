@@ -310,37 +310,23 @@ func (node *Node[K, V]) Len() int {
 	return node.len
 }
 
-type entriesFrame[K Comparable[K], V any] struct {
-	node     *Node[K, V]
-	leftDone bool
-}
-
 // Entries returns a slice of all key-value pairs in the map, sorted by key.
 func (node *Node[K, V]) Entries() []Entry[K, V] {
 	elems := make([]Entry[K, V], node.Len())
-	if node == nil {
-		return elems
-	}
 	index := 0
-	var preallocated [20]entriesFrame[K, V] // preallocate on stack for common case
+	var preallocated [64]*Node[K, V]
 	stack := preallocated[:0]
-	stack = append(stack, entriesFrame[K, V]{node, false})
-	for len(stack) > 0 {
-		top := &stack[len(stack)-1]
-
-		if !top.leftDone {
-			if top.node.children[0] != nil {
-				stack = append(stack, entriesFrame[K, V]{top.node.children[0], false})
-			}
-			top.leftDone = true
-		} else {
-			stack = stack[:len(stack)-1] // pop
-			elems[index] = top.node.entry
-			index++
-			if top.node.children[1] != nil {
-				stack = append(stack, entriesFrame[K, V]{top.node.children[1], false})
-			}
+	finger := node
+	for finger != nil || len(stack) > 0 {
+		for finger != nil {
+			stack = append(stack, finger)
+			finger = finger.children[0]
 		}
+		finger = stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		elems[index] = finger.entry
+		index++
+		finger = finger.children[1]
 	}
 	return elems
 }
