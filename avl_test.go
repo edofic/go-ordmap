@@ -9,6 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	benchInt     int
+	benchOK      bool
+	benchEntry   *Entry[Builtin[int], int]
+	benchEntries []Entry[Builtin[int], int]
+	benchNode    *Node[Builtin[int], int]
+)
+
 func eq[K Comparable[K]](k1, k2 K) bool {
 	if k1.Less(k2) {
 		return false
@@ -225,8 +233,9 @@ func TestRemoveMissing(t *testing.T) {
 	tree = tree.Insert(Builtin[int]{1}, "foo")
 	tree = tree.Insert(Builtin[int]{2}, "bar")
 	require.Equal(t, 2, tree.Len())
-	tree.Remove(Builtin[int]{0})
+	next := tree.Remove(Builtin[int]{0})
 	require.Equal(t, 2, tree.Len())
+	require.Same(t, tree, next)
 }
 
 func TestIteratorEmpty(t *testing.T) {
@@ -504,50 +513,112 @@ func BenchmarkTree(b *testing.B) {
 				tree = tree.Insert(Builtin[int]{i}, i)
 			}
 			b.Run("InsertRemove", func(b *testing.B) {
+				var next *Node[Builtin[int], int]
 				b.ReportAllocs()
 				for range b.N {
 					tree1 := tree.Insert(Builtin[int]{M + 1}, M+1)
-					_ = tree1.Remove(Builtin[int]{M + 1})
+					next = tree1.Remove(Builtin[int]{M + 1})
 				}
+				benchNode = next
 			})
-			b.Run("Entries", func(b *testing.B) {
+			b.Run("RemoveMissing", func(b *testing.B) {
+				var next *Node[Builtin[int], int]
 				b.ReportAllocs()
 				for range b.N {
-					tree.Entries()
+					next = tree.Remove(Builtin[int]{M + 1})
 				}
+				benchNode = next
+			})
+			b.Run("Entries", func(b *testing.B) {
+				var entries []Entry[Builtin[int], int]
+				b.ReportAllocs()
+				for range b.N {
+					entries = tree.Entries()
+				}
+				benchEntries = entries
 			})
 			b.Run("All", func(b *testing.B) {
+				sum := 0
 				b.ReportAllocs()
 				for range b.N {
 					for k, v := range tree.All() {
-						_, _ = k, v // no-op, just consume
+						sum += k.value + v
 					}
 				}
+				benchInt = sum
 			})
 			b.Run("All5", func(b *testing.B) {
+				sum := 0
 				b.ReportAllocs()
 				for range b.N {
 					count := 0
 					for k, v := range tree.All() {
-						_, _ = k, v
+						sum += k.value + v
 						count += 1
 						if count >= 5 {
-							continue
+							break
 						}
 					}
 				}
+				benchInt = sum
+			})
+			b.Run("FromMiddle5", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					count := 0
+					for k, v := range tree.From(Builtin[int]{M / 2}) {
+						sum += k.value + v
+						count += 1
+						if count >= 5 {
+							break
+						}
+					}
+				}
+				benchInt = sum
 			})
 			b.Run("Min", func(b *testing.B) {
+				var entry *Entry[Builtin[int], int]
 				b.ReportAllocs()
 				for range b.N {
-					tree.Min()
+					entry = tree.Min()
 				}
+				benchEntry = entry
+			})
+			b.Run("Max", func(b *testing.B) {
+				var entry *Entry[Builtin[int], int]
+				b.ReportAllocs()
+				for range b.N {
+					entry = tree.Max()
+				}
+				benchEntry = entry
 			})
 			b.Run("Get", func(b *testing.B) {
+				var (
+					value int
+					ok    bool
+				)
 				b.ReportAllocs()
 				for range b.N {
-					tree.Get(Builtin[int]{5})
+					value, ok = tree.Get(Builtin[int]{5})
 				}
+				benchInt = value
+				benchOK = ok
+			})
+			b.Run("GetRandom", func(b *testing.B) {
+				keys := make([]Builtin[int], 1024)
+				for i := range keys {
+					keys[i] = Builtin[int]{(i*7919 + 17) % M}
+				}
+				sum := 0
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					value, ok := tree.Get(keys[i&1023])
+					if ok {
+						sum += value
+					}
+				}
+				benchInt = sum
 			})
 		})
 	}

@@ -250,8 +250,14 @@ func (node *Node[K, V]) Remove(key K) *Node[K, V] {
 	entry, left, right := node.entry, node.children[0], node.children[1]
 	if node.entry.K.Less(key) {
 		right = right.Remove(key)
+		if right == node.children[1] {
+			return node
+		}
 	} else if key.Less(node.entry.K) {
 		left = left.Remove(key)
+		if left == node.children[0] {
+			return node
+		}
 	} else { // equals
 		max := left.Max()
 		if max == nil {
