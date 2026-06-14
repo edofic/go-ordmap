@@ -585,6 +585,7 @@
         <tr><td>Direct <code>NodeBuiltin.All</code> with 32-stack</td><td><span class="status reject">Rejected</span></td><td><code>All5</code> improved, but full <code>All</code> regressed and allocations were unchanged.</td></tr>
         <tr><td>Inline <code>mk_OrdMap</code> metadata computation</td><td><span class="status reject">Rejected</span></td><td>Insert paths slowed and allocations were unchanged.</td></tr>
         <tr><td>B-tree rewrite based on value-key comparison</td><td><span class="status reject">Rejected</span></td><td>Value-key B-tree lookup and iteration were much slower; insert was only comparable while using more bytes/op.</td></tr>
+        <tr><td>Iterative path-copy <code>Insert</code></td><td><span class="status reject">Rejected</span></td><td>Insert-only paths slowed and allocation counts/bytes were unchanged.</td></tr>
       </tbody>
     </table>
   </section>

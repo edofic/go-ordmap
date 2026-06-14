@@ -614,6 +614,14 @@ func BenchmarkTree(b *testing.B) {
 			for i := range M {
 				tree = tree.Insert(Builtin[int]{i}, i)
 			}
+			b.Run("InsertMax", func(b *testing.B) {
+				var next *Node[Builtin[int], int]
+				b.ReportAllocs()
+				for range b.N {
+					next = tree.Insert(Builtin[int]{M + 1}, M+1)
+				}
+				benchNode = next
+			})
 			b.Run("InsertRemove", func(b *testing.B) {
 				var next *Node[Builtin[int], int]
 				b.ReportAllocs()

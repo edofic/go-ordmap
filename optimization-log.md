@@ -603,6 +603,25 @@ Notes:
 - The strongest combined wins are missing deletes, builtin wrapper paths, and ordered iteration/range scans.
 - Successful write allocation counts and bytes/op are essentially unchanged; write-path experiments so far did not beat the recursive AVL implementation.
 
+### Experiment 29: iterative path-copy `Insert`
+
+Change:
+- Added `BenchmarkTree/*/InsertMax` coverage for generic insert-only measurements.
+- Tried replacing recursive `Insert` with an explicit search path stack and bottom-up `rotate` rebuild.
+
+Result:
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/InsertMax` | 902.7 | 953.4 | 912 | 19 | Rejected |
+| `BenchmarkTree/100000/InsertRemove` | 1656 | 1668 | 1680 | 35 | Neutral |
+| `BenchmarkTreeBuiltin/100000/InsertMax` | 783.3 | 827.0 | 912 | 19 | Rejected |
+
+Follow-up:
+- Reverted. The iterative path-copy rebuild did not reduce allocations and slowed insert-only paths.
+- Kept `BenchmarkTree/*/InsertMax` coverage.
+
 ### Latest broad benchmark snapshot
 
 Command:
