@@ -548,6 +548,7 @@
         <tr><td>Direct <code>NodeBuiltin.Insert</code> comparisons</td><td><span class="status reject">Rejected</span></td><td><code>InsertMax</code> slowed from 987.4 ns to 1100 ns; allocation count unchanged.</td></tr>
         <tr><td>One-pass builtin predecessor removal</td><td><span class="status reject">Rejected</span></td><td>Longer focused pass made middle-key delete slower, and allocations were unchanged.</td></tr>
         <tr><td>Direct <code>NodeBuiltin.Backward</code> traversal</td><td><span class="status reject">Rejected</span></td><td>Full reverse traversal slowed from 341986 ns to 353043 ns; allocation count unchanged.</td></tr>
+        <tr><td>Narrower node metadata</td><td><span class="status reject">Rejected</span></td><td><code>h uint8</code> plus <code>len uint32</code> did not reduce B/op because nodes stayed in the same allocator size class.</td></tr>
       </tbody>
     </table>
   </section>

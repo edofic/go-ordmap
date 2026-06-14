@@ -463,6 +463,26 @@ Follow-up:
 - Reverted the direct traversal because full reverse iteration regressed by 3.2% and allocations were unchanged.
 - Kept the builtin reverse test and benchmark coverage.
 
+### Experiment 24: narrower node metadata
+
+Change:
+- Tried changing internal `Node.h` from `int` to `uint8` and `Node.len` from `int` to `uint32`, keeping the public `Len()` API as `int`.
+
+Result:
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Baseline B/op | Experiment ns/op | Experiment B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/InsertRemove` | 1700 | 1680 | 1716 | 1680 | 35 | Rejected |
+| `BenchmarkTree/100000/RemoveExistingMiddle` | 697.7 | 768 | 742.7 | 768 | 16 | Rejected |
+| `BenchmarkTree/100000/RemoveExistingRandom` | 925.6 | 753 | 933.2 | 753 | 15 | Rejected |
+| `BenchmarkTreeBuiltin/100000/InsertMax` | 741.2 | 912 | 777.5 | 912 | 19 | Rejected |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingMiddle` | 672.5 | 768 | 665.2 | 768 | 16 | Mixed |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingRandom` | 992.4 | 753 | 887.9 | 753 | 15 | Mixed |
+
+Follow-up:
+- Reverted. The smaller fields did not reduce B/op because allocations stayed in the same Go allocator size class, and CPU results were mixed with insert regression.
+
 ### Latest broad benchmark snapshot
 
 Command:
