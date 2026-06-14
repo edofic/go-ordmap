@@ -730,6 +730,33 @@ func BenchmarkTreeBuiltin(b *testing.B) {
 				}
 				benchIntEntries = entries
 			})
+			b.Run("Get", func(b *testing.B) {
+				var (
+					value int
+					ok    bool
+				)
+				b.ReportAllocs()
+				for range b.N {
+					value, ok = tree.Get(5)
+				}
+				benchInt = value
+				benchOK = ok
+			})
+			b.Run("GetRandom", func(b *testing.B) {
+				keys := make([]int, 1024)
+				for i := range keys {
+					keys[i] = (i*7919 + 17) % M
+				}
+				sum := 0
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					value, ok := tree.Get(keys[i&1023])
+					if ok {
+						sum += value
+					}
+				}
+				benchInt = sum
+			})
 			b.Run("All", func(b *testing.B) {
 				sum := 0
 				b.ReportAllocs()

@@ -59,7 +59,20 @@ type NodeBuiltin[K BuiltinComparable, V any] struct {
 // Get retrieves the value for the given key.
 // It returns the value and true if the key exists, otherwise the zero value and false.
 func (n NodeBuiltin[K, V]) Get(key K) (value V, ok bool) {
-	return n.n.Get(Builtin[K]{key})
+	finger := n.n
+	for {
+		if finger == nil {
+			ok = false
+			return
+		}
+		if key < finger.entry.K.value {
+			finger = finger.children[0]
+		} else if finger.entry.K.value < key {
+			finger = finger.children[1]
+		} else {
+			return finger.entry.V, true
+		}
+	}
 }
 
 // Insert adds a key-value pair to the map.
