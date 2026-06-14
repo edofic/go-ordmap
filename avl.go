@@ -83,11 +83,21 @@ func (n NodeBuiltin[K, V]) Len() int {
 
 // Entries returns a slice of all key-value pairs in the map, sorted by key.
 func (n NodeBuiltin[K, V]) Entries() []Entry[K, V] {
-	baseEntries := n.n.Entries()
-	// TODO can this be unsafely cast?
-	entries := make([]Entry[K, V], len(baseEntries))
-	for i, e := range baseEntries {
-		entries[i] = Entry[K, V]{e.K.value, e.V}
+	entries := make([]Entry[K, V], n.n.Len())
+	index := 0
+	var preallocated [64]*Node[Builtin[K], V]
+	stack := preallocated[:0]
+	finger := n.n
+	for finger != nil || len(stack) > 0 {
+		for finger != nil {
+			stack = append(stack, finger)
+			finger = finger.children[0]
+		}
+		finger = stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		entries[index] = Entry[K, V]{finger.entry.K.value, finger.entry.V}
+		index++
+		finger = finger.children[1]
 	}
 	return entries
 }

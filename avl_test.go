@@ -10,13 +10,14 @@ import (
 )
 
 var (
-	benchInt     int
-	benchOK      bool
-	benchEntry   *Entry[Builtin[int], int]
-	benchEntries []Entry[Builtin[int], int]
-	benchNode    *Node[Builtin[int], int]
-	benchSeq     func(func(Builtin[int], int) bool)
-	benchIntSeq  func(func(int, int) bool)
+	benchInt        int
+	benchOK         bool
+	benchEntry      *Entry[Builtin[int], int]
+	benchEntries    []Entry[Builtin[int], int]
+	benchIntEntries []Entry[int, int]
+	benchNode       *Node[Builtin[int], int]
+	benchSeq        func(func(Builtin[int], int) bool)
+	benchIntSeq     func(func(int, int) bool)
 )
 
 func eq[K Comparable[K]](k1, k2 K) bool {
@@ -721,6 +722,14 @@ func BenchmarkTreeBuiltin(b *testing.B) {
 			for i := range M {
 				tree = tree.Insert(i, i)
 			}
+			b.Run("Entries", func(b *testing.B) {
+				var entries []Entry[int, int]
+				b.ReportAllocs()
+				for range b.N {
+					entries = tree.Entries()
+				}
+				benchIntEntries = entries
+			})
 			b.Run("All", func(b *testing.B) {
 				sum := 0
 				b.ReportAllocs()
