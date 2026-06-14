@@ -16,6 +16,7 @@ var (
 	benchEntries    []Entry[Builtin[int], int]
 	benchIntEntries []Entry[int, int]
 	benchNode       *Node[Builtin[int], int]
+	benchBuiltin    NodeBuiltin[int, int]
 	benchSeq        func(func(Builtin[int], int) bool)
 	benchIntSeq     func(func(int, int) bool)
 )
@@ -722,6 +723,14 @@ func BenchmarkTreeBuiltin(b *testing.B) {
 			for i := range M {
 				tree = tree.Insert(i, i)
 			}
+			b.Run("InsertMax", func(b *testing.B) {
+				var next NodeBuiltin[int, int]
+				b.ReportAllocs()
+				for range b.N {
+					next = tree.Insert(M+1, M+1)
+				}
+				benchBuiltin = next
+			})
 			b.Run("Entries", func(b *testing.B) {
 				var entries []Entry[int, int]
 				b.ReportAllocs()

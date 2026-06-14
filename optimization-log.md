@@ -327,6 +327,23 @@ Notes:
 - Fixed-key lookup improved by 78.0%.
 - Pseudo-random lookup improved by 47.7%.
 
+### Experiment 17: direct `NodeBuiltin.Insert` comparisons
+
+Change:
+- Added `BenchmarkTreeBuiltin/*/InsertMax` coverage.
+- Tried a specialized `NodeBuiltin.Insert` recursion using direct `<` comparisons on the built-in key type.
+
+Result:
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTreeBuiltin/100000/InsertMax` | 987.4 | 1100 | 912 | 19 | Rejected |
+
+Follow-up:
+- Reverted the specialized insert path. It did not reduce allocations and moved median CPU time in the wrong direction.
+- Kept the benchmark coverage for future write-path experiments.
+
 ### Post-Entries broad benchmark snapshot
 
 Command:
