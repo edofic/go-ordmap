@@ -180,3 +180,18 @@ Notes:
 - Escape check: `go test -run '^$' -gcflags='-m=2' .` reports the returned `All` func literal can escape when the `iter.Seq2` value is materialized, but `append(stack, finger) does not escape`; the explicit traversal stack stays off heap.
 - Construction benchmark: storing `tree.All()` costs 24 B/op and 1 alloc/op. Direct `for range tree.All()` remains 0 B/op and 0 allocs/op.
 - `NodeBuiltin.All` direct range also remains 0 B/op and 0 allocs/op; storing the returned sequence is likewise 24 B/op and 1 alloc/op.
+
+### Experiment 9: iterative `Backward`
+
+Change:
+- Added `Backward` and `Backward5` benchmarks.
+- Replaced recursive `Backward` traversal with an explicit stack backed by a stack-allocated array.
+
+Result:
+- Tests: `go test ./...` passed.
+- Focused 100k benchmark medians with `-benchtime=500ms -count=5`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/Backward` | 728071 | 327899 | 0 | 0 | Keep |
+| `BenchmarkTree/100000/Backward5` | 39.46 | 15.42 | 0 | 0 | Keep |

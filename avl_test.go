@@ -592,6 +592,31 @@ func BenchmarkTree(b *testing.B) {
 				}
 				benchInt = sum
 			})
+			b.Run("Backward", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					for k, v := range tree.Backward() {
+						sum += k.value + v
+					}
+				}
+				benchInt = sum
+			})
+			b.Run("Backward5", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					count := 0
+					for k, v := range tree.Backward() {
+						sum += k.value + v
+						count += 1
+						if count >= 5 {
+							break
+						}
+					}
+				}
+				benchInt = sum
+			})
 			b.Run("FromMiddle5", func(b *testing.B) {
 				sum := 0
 				b.ReportAllocs()
