@@ -15,6 +15,8 @@ var (
 	benchEntry   *Entry[Builtin[int], int]
 	benchEntries []Entry[Builtin[int], int]
 	benchNode    *Node[Builtin[int], int]
+	benchSeq     func(func(Builtin[int], int) bool)
+	benchIntSeq  func(func(int, int) bool)
 )
 
 func eq[K Comparable[K]](k1, k2 K) bool {
@@ -529,6 +531,26 @@ func BenchmarkTree(b *testing.B) {
 				}
 				benchNode = next
 			})
+			b.Run("RemoveExistingMiddle", func(b *testing.B) {
+				var next *Node[Builtin[int], int]
+				b.ReportAllocs()
+				for range b.N {
+					next = tree.Remove(Builtin[int]{M / 2})
+				}
+				benchNode = next
+			})
+			b.Run("RemoveExistingRandom", func(b *testing.B) {
+				keys := make([]Builtin[int], 1024)
+				for i := range keys {
+					keys[i] = Builtin[int]{(i*7919 + 17) % M}
+				}
+				var next *Node[Builtin[int], int]
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					next = tree.Remove(keys[i&1023])
+				}
+				benchNode = next
+			})
 			b.Run("Entries", func(b *testing.B) {
 				var entries []Entry[Builtin[int], int]
 				b.ReportAllocs()
@@ -546,6 +568,14 @@ func BenchmarkTree(b *testing.B) {
 					}
 				}
 				benchInt = sum
+			})
+			b.Run("AllCreate", func(b *testing.B) {
+				var seq func(func(Builtin[int], int) bool)
+				b.ReportAllocs()
+				for range b.N {
+					seq = tree.All()
+				}
+				benchSeq = seq
 			})
 			b.Run("All5", func(b *testing.B) {
 				sum := 0
@@ -616,6 +646,50 @@ func BenchmarkTree(b *testing.B) {
 					value, ok := tree.Get(keys[i&1023])
 					if ok {
 						sum += value
+					}
+				}
+				benchInt = sum
+			})
+		})
+	}
+}
+
+func BenchmarkTreeBuiltin(b *testing.B) {
+	for _, M := range []int{100000} {
+		b.Run(fmt.Sprintf("%v", M), func(b *testing.B) {
+			tree := NewBuiltin[int, int]()
+			for i := range M {
+				tree = tree.Insert(i, i)
+			}
+			b.Run("All", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					for k, v := range tree.All() {
+						sum += k + v
+					}
+				}
+				benchInt = sum
+			})
+			b.Run("AllCreate", func(b *testing.B) {
+				var seq func(func(int, int) bool)
+				b.ReportAllocs()
+				for range b.N {
+					seq = tree.All()
+				}
+				benchIntSeq = seq
+			})
+			b.Run("All5", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					count := 0
+					for k, v := range tree.All() {
+						sum += k + v
+						count += 1
+						if count >= 5 {
+							break
+						}
 					}
 				}
 				benchInt = sum

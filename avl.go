@@ -369,23 +369,21 @@ func (node *Node[K, V]) Max() *Entry[K, V] {
 // All returns an iterator over all key-value pairs in the map, sorted by key (ascending).
 func (node *Node[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		var step func(*Node[K, V]) bool
-		step = func(node *Node[K, V]) bool {
-			if node == nil {
-				return true
+		var preallocated [64]*Node[K, V]
+		stack := preallocated[:0]
+		finger := node
+		for finger != nil || len(stack) > 0 {
+			for finger != nil {
+				stack = append(stack, finger)
+				finger = finger.children[0]
 			}
-			if !step(node.children[0]) {
-				return false
+			finger = stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			if !yield(finger.entry.K, finger.entry.V) {
+				return
 			}
-			if !yield(node.entry.K, node.entry.V) {
-				return false
-			}
-			if !step(node.children[1]) {
-				return false
-			}
-			return true
+			finger = finger.children[1]
 		}
-		step(node)
 	}
 }
 
