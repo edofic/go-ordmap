@@ -169,9 +169,27 @@ func (n NodeBuiltin[K, V]) Backward() iter.Seq2[K, V] {
 // The iteration proceeds in ascending order.
 func (n NodeBuiltin[K, V]) From(k K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		for b, v := range n.n.From(Builtin[K]{k}) {
-			if !yield(b.value, v) {
+		var preallocated [64]*Node[Builtin[K], V]
+		stack := preallocated[:0]
+		finger := n.n
+		for finger != nil {
+			if finger.entry.K.value < k {
+				finger = finger.children[1]
+			} else {
+				stack = append(stack, finger)
+				finger = finger.children[0]
+			}
+		}
+		for len(stack) > 0 {
+			finger = stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			if !yield(finger.entry.K.value, finger.entry.V) {
 				return
+			}
+			finger = finger.children[1]
+			for finger != nil {
+				stack = append(stack, finger)
+				finger = finger.children[0]
 			}
 		}
 	}

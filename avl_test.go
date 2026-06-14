@@ -475,6 +475,23 @@ func TestFrom(t *testing.T) {
 	})
 }
 
+func TestFromBuiltin(t *testing.T) {
+	tree := NewBuiltin[int, int]()
+	N := 100
+	for i := range N {
+		tree = tree.Insert(i, i)
+	}
+
+	valuesFromIterator := make([]int, 0, N)
+	for _, v := range tree.From(37) {
+		if v >= 42 {
+			break
+		}
+		valuesFromIterator = append(valuesFromIterator, v)
+	}
+	require.Equal(t, []int{37, 38, 39, 40, 41}, valuesFromIterator)
+}
+
 func TestBackwardFrom(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
@@ -825,6 +842,31 @@ func BenchmarkTreeBuiltin(b *testing.B) {
 						if count >= 5 {
 							break
 						}
+					}
+				}
+				benchInt = sum
+			})
+			b.Run("FromMiddle5", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					count := 0
+					for k, v := range tree.From(M / 2) {
+						sum += k + v
+						count += 1
+						if count >= 5 {
+							break
+						}
+					}
+				}
+				benchInt = sum
+			})
+			b.Run("FromMiddle", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					for k, v := range tree.From(M / 2) {
+						sum += k + v
 					}
 				}
 				benchInt = sum
