@@ -504,6 +504,22 @@ Result:
 Follow-up:
 - Reverted. Smaller stack reserves helped some early-termination cases, but hurt important full/range iteration paths and did not reduce allocations.
 
+### Experiment 26: direct `NodeBuiltin.All` with 32-pointer stack
+
+Change:
+- Tried a targeted direct `NodeBuiltin.All` traversal with a `[32]*Node` local stack, leaving generic traversal stacks unchanged.
+
+Result:
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTreeBuiltin/100000/All` | 326880 | 335928 | 0 | 0 | Rejected |
+| `BenchmarkTreeBuiltin/100000/All5` | 15.80 | 14.67 | 0 | 0 | Mixed |
+
+Follow-up:
+- Reverted. The direct 32-stack variant improved early termination but regressed full in-order iteration and did not reduce allocations.
+
 ### Latest broad benchmark snapshot
 
 Command:
