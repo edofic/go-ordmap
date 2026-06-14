@@ -622,6 +622,23 @@ Follow-up:
 - Reverted. The iterative path-copy rebuild did not reduce allocations and slowed insert-only paths.
 - Kept `BenchmarkTree/*/InsertMax` coverage.
 
+### Experiment 30: iterative successful `Remove`
+
+Change:
+- Tried replacing recursive `Remove` with an explicit search path stack, iterative predecessor removal, and bottom-up `rotate` rebuild.
+
+Result:
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/RemoveMissing` | 32.37 | 34.16 | 0 | 0 | Rejected |
+| `BenchmarkTree/100000/RemoveExistingMiddle` | 754.4 | 885.3 | 768 | 16 | Rejected |
+| `BenchmarkTree/100000/RemoveExistingRandom` | 877.6 | 1162 | 753 | 15 | Rejected |
+
+Follow-up:
+- Reverted. The iterative delete path slowed all measured generic remove cases and did not reduce allocations.
+
 ### Latest broad benchmark snapshot
 
 Command:
