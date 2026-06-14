@@ -94,7 +94,33 @@ func (n NodeBuiltin[K, V]) Insert(key K, value V) NodeBuiltin[K, V] {
 // If the key does not exist, the map is returned unchanged.
 // Returns a new map containing the change.
 func (n NodeBuiltin[K, V]) Remove(key K) NodeBuiltin[K, V] {
-	return NodeBuiltin[K, V]{n.n.Remove(Builtin[K]{key})}
+	return NodeBuiltin[K, V]{removeBuiltin(n.n, key)}
+}
+
+func removeBuiltin[K BuiltinComparable, V any](node *Node[Builtin[K], V], key K) *Node[Builtin[K], V] {
+	if node == nil {
+		return nil
+	}
+	entry, left, right := node.entry, node.children[0], node.children[1]
+	if node.entry.K.value < key {
+		right = removeBuiltin(right, key)
+		if right == node.children[1] {
+			return node
+		}
+	} else if key < node.entry.K.value {
+		left = removeBuiltin(left, key)
+		if left == node.children[0] {
+			return node
+		}
+	} else {
+		max := left.Max()
+		if max == nil {
+			return right
+		}
+		left = removeBuiltin(left, max.K.value)
+		entry = *max
+	}
+	return rotate(entry, left, right)
 }
 
 // Len returns the number of elements in the map.

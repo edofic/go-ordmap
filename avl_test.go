@@ -256,6 +256,37 @@ func TestRemoveMissing(t *testing.T) {
 	require.Same(t, tree, next)
 }
 
+func TestRemoveBuiltin(t *testing.T) {
+	tree := NewBuiltin[int, int]()
+	for _, key := range []int{4, 2, 6, 1, 3, 5, 7} {
+		tree = tree.Insert(key, key)
+	}
+
+	snapshot := tree
+	next := tree.Remove(4)
+
+	_, ok := next.Get(4)
+	require.False(t, ok)
+	require.Equal(t, 6, next.Len())
+	require.Equal(t, []Entry[int, int]{
+		{K: 1, V: 1},
+		{K: 2, V: 2},
+		{K: 3, V: 3},
+		{K: 5, V: 5},
+		{K: 6, V: 6},
+		{K: 7, V: 7},
+	}, next.Entries())
+	validateHeight(t, next.n)
+	validateOrdered(t, next.n)
+
+	value, ok := snapshot.Get(4)
+	require.True(t, ok)
+	require.Equal(t, 4, value)
+
+	missing := next.Remove(42)
+	require.Same(t, next.n, missing.n)
+}
+
 func TestIteratorEmpty(t *testing.T) {
 	var tree *Node[Builtin[int], string]
 	count := 0
@@ -776,6 +807,34 @@ func BenchmarkTreeBuiltin(b *testing.B) {
 				b.ReportAllocs()
 				for range b.N {
 					next = tree.Insert(M+1, M+1)
+				}
+				benchBuiltin = next
+			})
+			b.Run("RemoveMissing", func(b *testing.B) {
+				var next NodeBuiltin[int, int]
+				b.ReportAllocs()
+				for range b.N {
+					next = tree.Remove(M + 1)
+				}
+				benchBuiltin = next
+			})
+			b.Run("RemoveExistingMiddle", func(b *testing.B) {
+				var next NodeBuiltin[int, int]
+				b.ReportAllocs()
+				for range b.N {
+					next = tree.Remove(M / 2)
+				}
+				benchBuiltin = next
+			})
+			b.Run("RemoveExistingRandom", func(b *testing.B) {
+				keys := make([]int, 1024)
+				for i := range keys {
+					keys[i] = (i*7919 + 17) % M
+				}
+				var next NodeBuiltin[int, int]
+				b.ReportAllocs()
+				for i := 0; i < b.N; i++ {
+					next = tree.Remove(keys[i&1023])
 				}
 				benchBuiltin = next
 			})
