@@ -195,3 +195,23 @@ Result:
 | --- | ---: | ---: | ---: | ---: | --- |
 | `BenchmarkTree/100000/Backward` | 728071 | 327899 | 0 | 0 | Keep |
 | `BenchmarkTree/100000/Backward5` | 39.46 | 15.42 | 0 | 0 | Keep |
+
+### Experiment 10: iterative `From`
+
+Change:
+- Added a full `FromMiddle` benchmark.
+- Replaced recursive `From` seek/traversal with an explicit stack:
+  - seek pushes the path of candidate nodes with key `>= k`;
+  - traversal then continues in sorted order without recursion.
+
+Result:
+- Tests: `go test ./...` passed.
+- Focused 100k benchmark medians with `-benchtime=500ms -count=5`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/FromMiddle5` | 49.07 | 32.48 | 0 | 0 | Keep |
+| `BenchmarkTree/100000/FromMiddle` | 367096 | 141452 | 0 | 0 | Keep |
+
+Notes:
+- One `FromMiddle5` sample was an outlier; the other four experiment samples were tightly clustered around 31-33 ns/op.

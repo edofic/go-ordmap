@@ -632,6 +632,16 @@ func BenchmarkTree(b *testing.B) {
 				}
 				benchInt = sum
 			})
+			b.Run("FromMiddle", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					for k, v := range tree.From(Builtin[int]{M / 2}) {
+						sum += k.value + v
+					}
+				}
+				benchInt = sum
+			})
 			b.Run("Min", func(b *testing.B) {
 				var entry *Entry[Builtin[int], int]
 				b.ReportAllocs()

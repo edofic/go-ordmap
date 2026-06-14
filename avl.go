@@ -412,56 +412,29 @@ func (node *Node[K, V]) Backward() iter.Seq2[K, V] {
 // The iteration proceeds in ascending order.
 func (node *Node[K, V]) From(k K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		// Phase 2: Unconditional Traversal
-		// Used once we are strictly inside the valid range.
-		// No comparisons against 'k' are performed here.
-		var iterate func(*Node[K, V]) bool
-		iterate = func(n *Node[K, V]) bool {
-			if n == nil {
-				return true
+		var preallocated [64]*Node[K, V]
+		stack := preallocated[:0]
+		finger := node
+		for finger != nil {
+			if finger.entry.K.Less(k) {
+				finger = finger.children[1]
+			} else {
+				stack = append(stack, finger)
+				finger = finger.children[0]
 			}
-			if !iterate(n.children[0]) {
-				return false
-			}
-			if !yield(n.entry.K, n.entry.V) {
-				return false
-			}
-			return iterate(n.children[1])
 		}
-
-		// Phase 1: Seeking the Boundary
-		// Performs comparisons to prune left subtrees.
-		var seek func(*Node[K, V]) bool
-		seek = func(n *Node[K, V]) bool {
-			if n == nil {
-				return true
+		for len(stack) > 0 {
+			finger = stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			if !yield(finger.entry.K, finger.entry.V) {
+				return
 			}
-
-			// If n < k:
-			// This node and its entire left subtree are too small.
-			// Skip them and continue seeking in the right subtree.
-			if n.entry.K.Less(k) {
-				return seek(n.children[1])
+			finger = finger.children[1]
+			for finger != nil {
+				stack = append(stack, finger)
+				finger = finger.children[0]
 			}
-
-			// If n >= k:
-			// 1. The boundary might be in the left subtree, so we 'seek' left.
-			if !seek(n.children[0]) {
-				return false
-			}
-
-			// 2. This node is valid.
-			if !yield(n.entry.K, n.entry.V) {
-				return false
-			}
-
-			// 3. OPTIMIZATION:
-			// Since n >= k, all nodes in the right subtree are > k.
-			// Switch to unconditional 'iterate' (no comparisons).
-			return iterate(n.children[1])
 		}
-
-		seek(node)
 	}
 }
 
