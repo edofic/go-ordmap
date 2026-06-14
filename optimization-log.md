@@ -273,31 +273,50 @@ Notes:
 - Time improved by 16.9% over the exact-length frame traversal.
 - Allocation count is unchanged because `Entries` must materialize and return the slice.
 
+### Experiment 14: direct `NodeBuiltin.Entries` fill
+
+Change:
+- Added `BenchmarkTreeBuiltin/*/Entries` coverage.
+- Replaced `NodeBuiltin.Entries`'s generic `n.n.Entries()` call plus conversion copy with a direct in-order traversal into the final `[]Entry[K, V]`.
+
+Result:
+- Tests: `go test ./...` passed.
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Baseline B/op | Baseline allocs/op | Experiment ns/op | Experiment B/op | Experiment allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTreeBuiltin/100000/Entries` | 2350193 | 3211271 | 2 | 1612549 | 1605636 | 1 | Keep |
+
+Notes:
+- Time improved by 31.4%.
+- Allocation count drops from two result-sized slices to one, and bytes/op roughly halves.
+
 ### Post-Entries broad benchmark snapshot
 
 Command:
 - `go test -run '^$' -bench 'BenchmarkTree/100000' -benchmem -benchtime=300ms -count=3 .`
 
-Median results from the run after experiment 13:
+Median results from the run after experiment 14:
 
 | Benchmark | Median ns/op | B/op | allocs/op |
 | --- | ---: | ---: | ---: |
-| `BenchmarkTree/100000/InsertRemove` | 2437 | 1680 | 35 |
-| `BenchmarkTree/100000/RemoveMissing` | 37.32 | 0 | 0 |
-| `BenchmarkTree/100000/RemoveExistingMiddle` | 1040 | 768 | 16 |
-| `BenchmarkTree/100000/RemoveExistingRandom` | 929.6 | 753 | 15 |
-| `BenchmarkTree/100000/Entries` | 1065516 | 1605637 | 1 |
-| `BenchmarkTree/100000/All` | 346866 | 0 | 0 |
-| `BenchmarkTree/100000/AllCreate` | 26.51 | 24 | 1 |
-| `BenchmarkTree/100000/All5` | 16.64 | 0 | 0 |
-| `BenchmarkTree/100000/Backward` | 320602 | 0 | 0 |
-| `BenchmarkTree/100000/Backward5` | 15.19 | 0 | 0 |
-| `BenchmarkTree/100000/FromMiddle5` | 31.69 | 0 | 0 |
-| `BenchmarkTree/100000/FromMiddle` | 140630 | 0 | 0 |
-| `BenchmarkTree/100000/BackwardFromMiddle5` | 30.79 | 0 | 0 |
-| `BenchmarkTree/100000/BackwardFromMiddle` | 133363 | 0 | 0 |
-| `BenchmarkTree/100000/Get` | 22.82 | 0 | 0 |
-| `BenchmarkTree/100000/GetRandom` | 39.24 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/All` | 489662 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/AllCreate` | 21.82 | 24 | 1 |
-| `BenchmarkTreeBuiltin/100000/All5` | 15.69 | 0 | 0 |
+| `BenchmarkTree/100000/InsertRemove` | 2339 | 1680 | 35 |
+| `BenchmarkTree/100000/RemoveMissing` | 32.39 | 0 | 0 |
+| `BenchmarkTree/100000/RemoveExistingMiddle` | 738.4 | 768 | 16 |
+| `BenchmarkTree/100000/RemoveExistingRandom` | 1181 | 753 | 15 |
+| `BenchmarkTree/100000/Entries` | 1078448 | 1605636 | 1 |
+| `BenchmarkTree/100000/All` | 340010 | 0 | 0 |
+| `BenchmarkTree/100000/AllCreate` | 26.14 | 24 | 1 |
+| `BenchmarkTree/100000/All5` | 17.93 | 0 | 0 |
+| `BenchmarkTree/100000/Backward` | 343026 | 0 | 0 |
+| `BenchmarkTree/100000/Backward5` | 15.36 | 0 | 0 |
+| `BenchmarkTree/100000/FromMiddle5` | 32.69 | 0 | 0 |
+| `BenchmarkTree/100000/FromMiddle` | 143380 | 0 | 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle5` | 30.08 | 0 | 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle` | 133291 | 0 | 0 |
+| `BenchmarkTree/100000/Get` | 23.25 | 0 | 0 |
+| `BenchmarkTree/100000/GetRandom` | 40.05 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/Entries` | 1940547 | 1605632 | 1 |
+| `BenchmarkTreeBuiltin/100000/All` | 433767 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/AllCreate` | 20.62 | 24 | 1 |
+| `BenchmarkTreeBuiltin/100000/All5` | 15.74 | 0 | 0 |
