@@ -544,6 +544,7 @@
         <tr><td>Cached heights in <code>rotate</code></td><td><span class="status reject">Rejected</span></td><td>Mixed CPU results, no allocation reduction, more complex code.</td></tr>
         <tr><td>Direct <code>NodeBuiltin.All</code> traversal</td><td><span class="status reject">Rejected</span></td><td>Full traversal slowed from 340490 ns to 372410 ns; allocation count unchanged.</td></tr>
         <tr><td>Direct <code>NodeBuiltin.Insert</code> comparisons</td><td><span class="status reject">Rejected</span></td><td><code>InsertMax</code> slowed from 987.4 ns to 1100 ns; allocation count unchanged.</td></tr>
+        <tr><td>One-pass builtin predecessor removal</td><td><span class="status reject">Rejected</span></td><td>Longer focused pass made middle-key delete slower, and allocations were unchanged.</td></tr>
       </tbody>
     </table>
   </section>

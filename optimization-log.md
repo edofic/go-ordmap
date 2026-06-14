@@ -426,6 +426,23 @@ Notes:
 - Existing middle-key remove improved by 12.9% in the focused run; random existing remove was only 1.7% faster and should be treated as roughly neutral.
 - Allocation counts are unchanged.
 
+### Experiment 22: one-pass builtin predecessor removal
+
+Change:
+- Tried replacing `removeBuiltin`'s `left.Max()` plus recursive predecessor delete with a single `removeMaxBuiltin` helper.
+
+Result:
+- Focused 100k benchmark medians:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTreeBuiltin/100000/RemoveMissing` | 22.43 | 22.72 | 0 | 0 | Neutral |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingMiddle` | 674.2 | 703.9 | 768 | 16 | Rejected |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingRandom` | 986.9 | 931.0 | 753 | 15 | Mixed |
+
+Follow-up:
+- Reverted. The longer focused pass made middle-key delete slower, and there was no allocation reduction to justify the added helper.
+
 ### Latest broad benchmark snapshot
 
 Command:
