@@ -424,6 +424,7 @@
         <tr><td>Explicit <code>left</code>/<code>right</code> fields</td><td><span class="status reject">Rejected</span></td><td>Full iteration and <code>Entries</code> got slower.</td></tr>
         <tr><td>Recursive pre-sized <code>Entries</code></td><td><span class="status reject">Rejected</span></td><td>Slower than the existing explicit stack despite avoiding append.</td></tr>
         <tr><td>Cached heights in <code>rotate</code></td><td><span class="status reject">Rejected</span></td><td>Mixed CPU results, no allocation reduction, more complex code.</td></tr>
+        <tr><td>Direct <code>NodeBuiltin.All</code> traversal</td><td><span class="status reject">Rejected</span></td><td>Full traversal slowed from 340490 ns to 372410 ns; allocation count unchanged.</td></tr>
       </tbody>
     </table>
   </section>

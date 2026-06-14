@@ -291,6 +291,23 @@ Notes:
 - Time improved by 31.4%.
 - Allocation count drops from two result-sized slices to one, and bytes/op roughly halves.
 
+### Experiment 15: direct `NodeBuiltin.All` traversal
+
+Change:
+- Replaced `NodeBuiltin.All`'s wrapper around `n.n.All()` with a direct pointer-stack traversal that unwraps `Builtin[K]` inline.
+
+Result:
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTreeBuiltin/100000/All` | 340490 | 372410 | 0 | 0 | Rejected |
+| `BenchmarkTreeBuiltin/100000/AllCreate` | 22.96 | 21.31 | 24 | 1 | Too small |
+| `BenchmarkTreeBuiltin/100000/All5` | 15.68 | 15.60 | 0 | 0 | Too small |
+
+Follow-up:
+- Reverted. Removing the nested iterator made full traversal slower, and the tiny construction/early-iteration movement did not reduce allocations.
+
 ### Post-Entries broad benchmark snapshot
 
 Command:
