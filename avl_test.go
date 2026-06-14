@@ -468,6 +468,25 @@ func TestBackward(t *testing.T) {
 	require.Equal(t, valuesFromEntries, valuesFromIterator)
 }
 
+func TestBackwardBuiltin(t *testing.T) {
+	tree := NewBuiltin[int, int]()
+	N := 100
+	for i := range N {
+		tree = tree.Insert(i, i)
+	}
+
+	valuesFromEntries := make([]int, N)
+	for i, entry := range tree.Entries() {
+		valuesFromEntries[N-i-1] = entry.V
+	}
+
+	valuesFromIterator := make([]int, 0, N)
+	for _, v := range tree.Backward() {
+		valuesFromIterator = append(valuesFromIterator, v)
+	}
+	require.Equal(t, valuesFromEntries, valuesFromIterator)
+}
+
 func TestFrom(t *testing.T) {
 	var tree *Node[Builtin[int], int]
 	N := 100
@@ -913,6 +932,31 @@ func BenchmarkTreeBuiltin(b *testing.B) {
 				for range b.N {
 					count := 0
 					for k, v := range tree.All() {
+						sum += k + v
+						count += 1
+						if count >= 5 {
+							break
+						}
+					}
+				}
+				benchInt = sum
+			})
+			b.Run("Backward", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					for k, v := range tree.Backward() {
+						sum += k + v
+					}
+				}
+				benchInt = sum
+			})
+			b.Run("Backward5", func(b *testing.B) {
+				sum := 0
+				b.ReportAllocs()
+				for range b.N {
+					count := 0
+					for k, v := range tree.Backward() {
 						sum += k + v
 						count += 1
 						if count >= 5 {
