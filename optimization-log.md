@@ -567,6 +567,42 @@ Decision:
 - Keep the benchmark coverage.
 - Do not pursue a B-tree rewrite from these numbers: value-key B-tree lookup and iteration are much slower; insert is only roughly comparable and uses more bytes/op; remove is slower and also uses more bytes/op.
 
+### Combined before/after benchmark
+
+Change:
+- Ran the current benchmark harness against the pre-optimization commit `fb334c4` in `/tmp/go-ordmap-before.qpy9Qw`.
+- Ran the same benchmark harness against current optimized head.
+- Command:
+  - `go test -run '^$' -bench 'BenchmarkTree(Builtin)?/100000/(InsertRemove|InsertMax|RemoveMissing|RemoveExistingMiddle|RemoveExistingRandom|Entries|All|AllCreate|All5|Backward|Backward5|FromMiddle5|FromMiddle|BackwardFromMiddle5|BackwardFromMiddle|Get|GetRandom|Min|Max)$' -benchmem -benchtime=300ms -count=5 .`
+
+Result:
+- Medians from 5 runs, 100k elements. Builtin full-iterator rows use a focused optimized rerun after the broad run produced scheduler outliers.
+
+| Benchmark | Before ns/op | After ns/op | Time change | Before B/op | After B/op | Allocs/op |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/RemoveMissing` | 809.5 | 36.12 | -95.5% | 816 | 0 | 17 -> 0 |
+| `BenchmarkTree/100000/Entries` | 1572068 | 1223940 | -22.1% | 1605642 | 1605636 | 1 -> 1 |
+| `BenchmarkTree/100000/All` | 731371 | 310862 | -57.5% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTree/100000/All5` | 42.58 | 17.59 | -58.7% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTree/100000/Backward` | 704934 | 338350 | -52.0% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTree/100000/Backward5` | 39.87 | 15.58 | -60.9% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTree/100000/FromMiddle` | 361554 | 144677 | -60.0% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle` | 332533 | 136724 | -58.9% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTreeBuiltin/100000/RemoveMissing` | 687.2 | 22.32 | -96.8% | 816 | 0 | 17 -> 0 |
+| `BenchmarkTreeBuiltin/100000/Entries` | 3256859 | 1580525 | -51.5% | 3211265 | 1605632 | 2 -> 1 |
+| `BenchmarkTreeBuiltin/100000/Get` | 22.68 | 4.723 | -79.2% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTreeBuiltin/100000/GetRandom` | 40.98 | 21.21 | -48.2% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTreeBuiltin/100000/Min` | 19.56 | 3.206 | -83.6% | 16 | 0 | 1 -> 0 |
+| `BenchmarkTreeBuiltin/100000/Max` | 16.51 | 3.110 | -81.2% | 16 | 0 | 1 -> 0 |
+| `BenchmarkTreeBuiltin/100000/All` | 1215292 | 348794 | -71.3% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTreeBuiltin/100000/Backward` | 1187186 | 341541 | -71.2% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTreeBuiltin/100000/FromMiddle` | 548081 | 152945 | -72.1% | 0 | 0 | 0 -> 0 |
+| `BenchmarkTreeBuiltin/100000/BackwardFromMiddle` | 492163 | 140333 | -71.5% | 0 | 0 | 0 -> 0 |
+
+Notes:
+- The strongest combined wins are missing deletes, builtin wrapper paths, and ordered iteration/range scans.
+- Successful write allocation counts and bytes/op are essentially unchanged; write-path experiments so far did not beat the recursive AVL implementation.
+
 ### Latest broad benchmark snapshot
 
 Command:

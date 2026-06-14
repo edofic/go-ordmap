@@ -284,6 +284,38 @@
   </section>
 
   <section class="section">
+    <h2>Combined Impact</h2>
+    <p>
+      Apples-to-apples comparison using the current benchmark harness against pre-optimization commit <code>fb334c4</code>
+      and current optimized head. Values are 100k-element medians from <code>-benchtime=300ms -count=5</code>;
+      builtin iterator after-values use a focused rerun after one broad pass produced scheduler outliers.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Benchmark</th><th class="num">Before ns/op</th><th class="num">After ns/op</th><th class="num">Time Change</th><th class="num">B/op</th><th class="num">Allocs/op</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>RemoveMissing</code></td><td class="num">809.5</td><td class="num">36.12</td><td class="num good">-95.5%</td><td class="num good">816 -> 0</td><td class="num good">17 -> 0</td></tr>
+        <tr><td><code>Entries</code></td><td class="num">1572068</td><td class="num">1223940</td><td class="num good">-22.1%</td><td class="num">1605642 -> 1605636</td><td class="num">1 -> 1</td></tr>
+        <tr><td><code>All</code></td><td class="num">731371</td><td class="num">310862</td><td class="num good">-57.5%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>Backward</code></td><td class="num">704934</td><td class="num">338350</td><td class="num good">-52.0%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>FromMiddle</code></td><td class="num">361554</td><td class="num">144677</td><td class="num good">-60.0%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>BackwardFromMiddle</code></td><td class="num">332533</td><td class="num">136724</td><td class="num good">-58.9%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/RemoveMissing</code></td><td class="num">687.2</td><td class="num">22.32</td><td class="num good">-96.8%</td><td class="num good">816 -> 0</td><td class="num good">17 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/Entries</code></td><td class="num">3256859</td><td class="num">1580525</td><td class="num good">-51.5%</td><td class="num good">3211265 -> 1605632</td><td class="num good">2 -> 1</td></tr>
+        <tr><td><code>TreeBuiltin/Get</code></td><td class="num">22.68</td><td class="num">4.723</td><td class="num good">-79.2%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/GetRandom</code></td><td class="num">40.98</td><td class="num">21.21</td><td class="num good">-48.2%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/Min</code></td><td class="num">19.56</td><td class="num">3.206</td><td class="num good">-83.6%</td><td class="num good">16 -> 0</td><td class="num good">1 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/Max</code></td><td class="num">16.51</td><td class="num">3.110</td><td class="num good">-81.2%</td><td class="num good">16 -> 0</td><td class="num good">1 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/All</code></td><td class="num">1215292</td><td class="num">348794</td><td class="num good">-71.3%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/Backward</code></td><td class="num">1187186</td><td class="num">341541</td><td class="num good">-71.2%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/FromMiddle</code></td><td class="num">548081</td><td class="num">152945</td><td class="num good">-72.1%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+        <tr><td><code>TreeBuiltin/BackwardFromMiddle</code></td><td class="num">492163</td><td class="num">140333</td><td class="num good">-71.5%</td><td class="num">0 -> 0</td><td class="num">0 -> 0</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
     <h2>Keeper Timeline</h2>
     <div class="timeline">
       <article class="event">
