@@ -520,6 +520,26 @@ Result:
 Follow-up:
 - Reverted. The direct 32-stack variant improved early termination but regressed full in-order iteration and did not reduce allocations.
 
+### Experiment 27: inline `mk_OrdMap` metadata computation
+
+Change:
+- Tried computing height and length directly inside `mk_OrdMap`, avoiding `combinedDepth(left, right)` and `height()` calls on every copied node.
+
+Result:
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/InsertRemove` | 1700 | 1752 | 1680 | 35 | Rejected |
+| `BenchmarkTree/100000/RemoveExistingMiddle` | 697.7 | 758.4 | 768 | 16 | Rejected |
+| `BenchmarkTree/100000/RemoveExistingRandom` | 925.6 | 908.5 | 753 | 15 | Mixed |
+| `BenchmarkTreeBuiltin/100000/InsertMax` | 741.2 | 793.7 | 912 | 19 | Rejected |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingMiddle` | 672.5 | 672.5 | 768 | 16 | Neutral |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingRandom` | 992.4 | 998.5 | 753 | 15 | Neutral |
+
+Follow-up:
+- Reverted. Insert paths slowed and allocations were unchanged.
+
 ### Latest broad benchmark snapshot
 
 Command:

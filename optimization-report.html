@@ -551,6 +551,7 @@
         <tr><td>Narrower node metadata</td><td><span class="status reject">Rejected</span></td><td><code>h uint8</code> plus <code>len uint32</code> did not reduce B/op because nodes stayed in the same allocator size class.</td></tr>
         <tr><td>32-pointer traversal stack reserve</td><td><span class="status reject">Rejected</span></td><td>Early-termination cases improved, but full/range iteration paths regressed and allocations were unchanged.</td></tr>
         <tr><td>Direct <code>NodeBuiltin.All</code> with 32-stack</td><td><span class="status reject">Rejected</span></td><td><code>All5</code> improved, but full <code>All</code> regressed and allocations were unchanged.</td></tr>
+        <tr><td>Inline <code>mk_OrdMap</code> metadata computation</td><td><span class="status reject">Rejected</span></td><td>Insert paths slowed and allocations were unchanged.</td></tr>
       </tbody>
     </table>
   </section>
