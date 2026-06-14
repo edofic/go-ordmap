@@ -552,6 +552,7 @@
         <tr><td>32-pointer traversal stack reserve</td><td><span class="status reject">Rejected</span></td><td>Early-termination cases improved, but full/range iteration paths regressed and allocations were unchanged.</td></tr>
         <tr><td>Direct <code>NodeBuiltin.All</code> with 32-stack</td><td><span class="status reject">Rejected</span></td><td><code>All5</code> improved, but full <code>All</code> regressed and allocations were unchanged.</td></tr>
         <tr><td>Inline <code>mk_OrdMap</code> metadata computation</td><td><span class="status reject">Rejected</span></td><td>Insert paths slowed and allocations were unchanged.</td></tr>
+        <tr><td>B-tree rewrite based on value-key comparison</td><td><span class="status reject">Rejected</span></td><td>Value-key B-tree lookup and iteration were much slower; insert was only comparable while using more bytes/op.</td></tr>
       </tbody>
     </table>
   </section>
@@ -575,8 +576,8 @@
       Builtin wrapper paths now avoid comparison-wrapper overhead for lookups, ranges, min/max, and removes where benchmarks support it.
     </p>
     <p>
-      Next promising targets are write-path allocations for successful insert/remove and deeper comparison with the experimental B-tree,
-      but those should be evaluated carefully because earlier B-tree benchmarks include key allocation artifacts.
+      A no-allocation value-key B-tree comparison does not currently justify a rewrite: AVL is materially faster on lookup and iteration,
+      and B-tree writes use more bytes/op despite fewer allocation calls.
     </p>
   </section>
 

@@ -540,6 +540,33 @@ Result:
 Follow-up:
 - Reverted. Insert paths slowed and allocations were unchanged.
 
+### Experiment 28: no-allocation B-tree comparison benchmark
+
+Change:
+- Added value-key B-tree comparison coverage so benchmarked B-tree operations do not allocate a pointer key every op.
+- Added AVL/B-tree `All` and `All5` comparison rows for the 100k iteration workload.
+
+Result:
+- Tests: `go test ./...` passed.
+- Focused 100k benchmark medians with `-benchtime=300ms -count=5`:
+
+| Benchmark | Median ns/op | B/op | allocs/op |
+| --- | ---: | ---: | ---: |
+| `BenchmarkComparison/100000/avl/Get` | 4.899 | 0 | 0 |
+| `BenchmarkComparison/100000/btree_value/Get` | 14.92 | 0 | 0 |
+| `BenchmarkComparison/100000/avl/Insert` | 937.1 | 912 | 19 |
+| `BenchmarkComparison/100000/btree_value/Insert` | 926.6 | 1440 | 10 |
+| `BenchmarkComparison/100000/avl/Remove` | 808.4 | 754 | 15 |
+| `BenchmarkComparison/100000/btree_value/Remove` | 1013 | 1440 | 10 |
+| `BenchmarkComparison/100000/avl/All` | 327147 | 0 | 0 |
+| `BenchmarkComparison/100000/btree_value/All` | 612395 | 0 | 0 |
+| `BenchmarkComparison/100000/avl/All5` | 14.63 | 0 | 0 |
+| `BenchmarkComparison/100000/btree_value/All5` | 29.07 | 0 | 0 |
+
+Decision:
+- Keep the benchmark coverage.
+- Do not pursue a B-tree rewrite from these numbers: value-key B-tree lookup and iteration are much slower; insert is only roughly comparable and uses more bytes/op; remove is slower and also uses more bytes/op.
+
 ### Latest broad benchmark snapshot
 
 Command:
