@@ -13,6 +13,7 @@ var (
 	benchInt        int
 	benchOK         bool
 	benchEntry      *Entry[Builtin[int], int]
+	benchIntEntry   *Entry[int, int]
 	benchEntries    []Entry[Builtin[int], int]
 	benchIntEntries []Entry[int, int]
 	benchNode       *Node[Builtin[int], int]
@@ -230,6 +231,19 @@ func TestMinMax(t *testing.T) {
 
 	require.Equal(t, &Entry[Builtin[int], string]{K: Builtin[int]{1}, V: "foo"}, tree.Min())
 	require.Equal(t, &Entry[Builtin[int], string]{K: Builtin[int]{3}, V: "baz"}, tree.Max())
+}
+
+func TestMinMaxBuiltin(t *testing.T) {
+	tree := NewBuiltin[int, string]()
+	require.Nil(t, tree.Min())
+	require.Nil(t, tree.Max())
+
+	tree = tree.Insert(1, "foo")
+	tree = tree.Insert(2, "bar")
+	tree = tree.Insert(3, "baz")
+
+	require.Equal(t, &Entry[int, string]{K: 1, V: "foo"}, tree.Min())
+	require.Equal(t, &Entry[int, string]{K: 3, V: "baz"}, tree.Max())
 }
 
 func TestRemoveMissing(t *testing.T) {
@@ -765,6 +779,22 @@ func BenchmarkTreeBuiltin(b *testing.B) {
 					}
 				}
 				benchInt = sum
+			})
+			b.Run("Min", func(b *testing.B) {
+				var entry *Entry[int, int]
+				b.ReportAllocs()
+				for range b.N {
+					entry = tree.Min()
+				}
+				benchIntEntry = entry
+			})
+			b.Run("Max", func(b *testing.B) {
+				var entry *Entry[int, int]
+				b.ReportAllocs()
+				for range b.N {
+					entry = tree.Max()
+				}
+				benchIntEntry = entry
 			})
 			b.Run("All", func(b *testing.B) {
 				sum := 0

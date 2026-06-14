@@ -8,7 +8,10 @@
 // create new versions.
 package ordmap
 
-import "iter"
+import (
+	"iter"
+	"unsafe"
+)
 
 // Comparable is an interface for types that can be compared.
 // It requires a Less method that returns true if the receiver is less than the argument.
@@ -54,6 +57,11 @@ type Entry[K, V any] struct {
 // It simplifies usage by handling the Builtin wrapper automatically.
 type NodeBuiltin[K BuiltinComparable, V any] struct {
 	n *Node[Builtin[K], V]
+}
+
+func unwrapBuiltinEntry[K BuiltinComparable, V any](entry *Entry[Builtin[K], V]) *Entry[K, V] {
+	// Builtin[K] is a single-field wrapper around K; this avoids allocating a copied Entry for Min/Max.
+	return (*Entry[K, V])(unsafe.Pointer(entry))
 }
 
 // Get retrieves the value for the given key.
@@ -122,7 +130,7 @@ func (n NodeBuiltin[K, V]) Min() *Entry[K, V] {
 	if e == nil {
 		return nil
 	}
-	return &Entry[K, V]{e.K.value, e.V}
+	return unwrapBuiltinEntry(e)
 }
 
 // Max returns the entry with the largest key in the map.
@@ -132,7 +140,7 @@ func (n NodeBuiltin[K, V]) Max() *Entry[K, V] {
 	if e == nil {
 		return nil
 	}
-	return &Entry[K, V]{e.K.value, e.V}
+	return unwrapBuiltinEntry(e)
 }
 
 // All returns an iterator over all key-value pairs in the map, sorted by key (ascending).
