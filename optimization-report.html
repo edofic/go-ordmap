@@ -214,7 +214,7 @@
       <span class="pill">API unchanged</span>
       <span class="pill">O(1) snapshots retained</span>
       <span class="pill">Direct iterator range: 0 allocs/op</span>
-      <span class="pill">Latest keeper commit: <code>efe8cf4</code></span>
+      <span class="pill">Latest keeper commit: <code>a11fa4c</code></span>
     </div>
   </section>
 
@@ -260,6 +260,11 @@
         <div class="label">Builtin min/max</div>
         <div class="metric good">1 -> 0</div>
         <p>Unsafe unwrap removes entry-copy allocation and runs near 3 ns/op.</p>
+      </div>
+      <div class="card">
+        <div class="label">Builtin forward ranges</div>
+        <div class="metric good">44.8%</div>
+        <p>Direct seek makes five-item ranges much faster, still 0 allocs/op.</p>
       </div>
     </div>
     <p>
@@ -426,13 +431,29 @@
           </tbody>
         </table>
       </article>
+
+      <article class="event">
+        <div class="event-head">
+          <h3>Direct <code>NodeBuiltin.From</code> traversal</h3>
+          <span class="commit">a11fa4c optimize builtin forward ranges</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Benchmark</th><th class="num">Before</th><th class="num">After</th><th class="num">Time Change</th><th class="num">Allocs</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>TreeBuiltin/FromMiddle5</code></td><td class="num">31.64 ns</td><td class="num">17.46 ns</td><td class="num good">-44.8%</td><td class="num">0 -> 0</td></tr>
+            <tr><td><code>TreeBuiltin/FromMiddle</code></td><td class="num">146063 ns</td><td class="num">142165 ns</td><td class="num good">-2.7%</td><td class="num">0 -> 0</td></tr>
+          </tbody>
+        </table>
+      </article>
     </div>
   </section>
 
   <section class="section">
     <h2>Latest Broad 100k Pass</h2>
     <p>
-      Sanity pass after allocation-free builtin min/max:
+      Sanity pass after direct builtin forward ranges:
       <code>go test -run '^$' -bench 'BenchmarkTree/100000' -benchmem -benchtime=300ms -count=3 .</code>.
       Values below are medians from that run.
     </p>
@@ -441,20 +462,22 @@
         <tr><th>Benchmark</th><th class="num">Median ns/op</th><th class="num">B/op</th><th class="num">Allocs/op</th><th>Readout</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>Entries</code></td><td class="num">1134818</td><td class="num">1605638</td><td class="num">1</td><td>Materializes the result slice; traversal bookkeeping is lower.</td></tr>
-        <tr><td><code>TreeBuiltin/Entries</code></td><td class="num">1774959</td><td class="num">1605634</td><td class="num">1</td><td>One public result slice; focused run shows the allocation reduction clearly.</td></tr>
-        <tr><td><code>TreeBuiltin/Get</code></td><td class="num">4.734</td><td class="num">0</td><td class="num">0</td><td>Direct built-in comparison path.</td></tr>
-        <tr><td><code>TreeBuiltin/GetRandom</code></td><td class="num">22.20</td><td class="num">0</td><td class="num">0</td><td>Random lookup benefits from avoiding wrapper comparison calls.</td></tr>
-        <tr><td><code>TreeBuiltin/Min</code></td><td class="num">3.076</td><td class="num">0</td><td class="num">0</td><td>Unsafe unwrap returns the internal entry pointer without a copy.</td></tr>
-        <tr><td><code>TreeBuiltin/Max</code></td><td class="num">3.261</td><td class="num">0</td><td class="num">0</td><td>Same zero-allocation unwrap for the largest entry.</td></tr>
-        <tr><td><code>TreeBuiltin/InsertMax</code></td><td class="num">808.6</td><td class="num">912</td><td class="num">19</td><td>Write-path benchmark retained for future experiments.</td></tr>
-        <tr><td><code>All</code></td><td class="num">335728</td><td class="num">0</td><td class="num">0</td><td>Full forward traversal remains allocation-free.</td></tr>
-        <tr><td><code>Backward</code></td><td class="num">337693</td><td class="num">0</td><td class="num">0</td><td>Full reverse traversal in same performance band.</td></tr>
-        <tr><td><code>FromMiddle</code></td><td class="num">141216</td><td class="num">0</td><td class="num">0</td><td>Upper-half range scan.</td></tr>
-        <tr><td><code>BackwardFromMiddle</code></td><td class="num">146050</td><td class="num">0</td><td class="num">0</td><td>Lower-half reverse range scan.</td></tr>
-        <tr><td><code>RemoveMissing</code></td><td class="num">32.15</td><td class="num">0</td><td class="num">0</td><td>Fast miss path with pointer preservation.</td></tr>
-        <tr><td><code>GetRandom</code></td><td class="num">41.03</td><td class="num">0</td><td class="num">0</td><td>Generic random lookup stayed stable.</td></tr>
-        <tr><td><code>AllCreate</code></td><td class="num">20.27</td><td class="num">24</td><td class="num">1</td><td>Only materializing/storing the returned iterator closure allocates.</td></tr>
+        <tr><td><code>Entries</code></td><td class="num">802890</td><td class="num">1605638</td><td class="num">1</td><td>Materializes the result slice; traversal bookkeeping is lower.</td></tr>
+        <tr><td><code>TreeBuiltin/Entries</code></td><td class="num">1743473</td><td class="num">1605633</td><td class="num">1</td><td>One public result slice; focused run shows the allocation reduction clearly.</td></tr>
+        <tr><td><code>TreeBuiltin/Get</code></td><td class="num">5.487</td><td class="num">0</td><td class="num">0</td><td>Direct built-in comparison path.</td></tr>
+        <tr><td><code>TreeBuiltin/GetRandom</code></td><td class="num">21.02</td><td class="num">0</td><td class="num">0</td><td>Random lookup benefits from avoiding wrapper comparison calls.</td></tr>
+        <tr><td><code>TreeBuiltin/Min</code></td><td class="num">3.119</td><td class="num">0</td><td class="num">0</td><td>Unsafe unwrap returns the internal entry pointer without a copy.</td></tr>
+        <tr><td><code>TreeBuiltin/Max</code></td><td class="num">3.019</td><td class="num">0</td><td class="num">0</td><td>Same zero-allocation unwrap for the largest entry.</td></tr>
+        <tr><td><code>TreeBuiltin/FromMiddle5</code></td><td class="num">16.54</td><td class="num">0</td><td class="num">0</td><td>Direct built-in forward seek.</td></tr>
+        <tr><td><code>TreeBuiltin/FromMiddle</code></td><td class="num">165759</td><td class="num">0</td><td class="num">0</td><td>Full upper-half wrapper scan; focused run is less noisy.</td></tr>
+        <tr><td><code>TreeBuiltin/InsertMax</code></td><td class="num">835.2</td><td class="num">912</td><td class="num">19</td><td>Write-path benchmark retained for future experiments.</td></tr>
+        <tr><td><code>All</code></td><td class="num">339188</td><td class="num">0</td><td class="num">0</td><td>Full forward traversal remains allocation-free.</td></tr>
+        <tr><td><code>Backward</code></td><td class="num">323294</td><td class="num">0</td><td class="num">0</td><td>Full reverse traversal in same performance band.</td></tr>
+        <tr><td><code>FromMiddle</code></td><td class="num">138465</td><td class="num">0</td><td class="num">0</td><td>Upper-half range scan.</td></tr>
+        <tr><td><code>BackwardFromMiddle</code></td><td class="num">143595</td><td class="num">0</td><td class="num">0</td><td>Lower-half reverse range scan.</td></tr>
+        <tr><td><code>RemoveMissing</code></td><td class="num">36.06</td><td class="num">0</td><td class="num">0</td><td>Fast miss path with pointer preservation.</td></tr>
+        <tr><td><code>GetRandom</code></td><td class="num">38.16</td><td class="num">0</td><td class="num">0</td><td>Generic random lookup stayed stable.</td></tr>
+        <tr><td><code>AllCreate</code></td><td class="num">22.83</td><td class="num">24</td><td class="num">1</td><td>Only materializing/storing the returned iterator closure allocates.</td></tr>
       </tbody>
     </table>
   </section>
