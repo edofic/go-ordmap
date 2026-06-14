@@ -214,7 +214,7 @@
       <span class="pill">API unchanged</span>
       <span class="pill">O(1) snapshots retained</span>
       <span class="pill">Direct iterator range: 0 allocs/op</span>
-      <span class="pill">Latest keeper commit: <code>452064f</code></span>
+      <span class="pill">Latest keeper commit: <code>4f6a104</code></span>
     </div>
   </section>
 
@@ -270,6 +270,11 @@
         <div class="label">Builtin reverse ranges</div>
         <div class="metric good">49.8%</div>
         <p>Direct reverse seek halves five-item range latency.</p>
+      </div>
+      <div class="card">
+        <div class="label">Builtin missing remove</div>
+        <div class="metric good">40.0%</div>
+        <p>Direct delete comparisons cut the fast miss path to 22.43 ns/op.</p>
       </div>
     </div>
     <p>
@@ -468,14 +473,31 @@
           </tbody>
         </table>
       </article>
+
+      <article class="event">
+        <div class="event-head">
+          <h3>Direct <code>NodeBuiltin.Remove</code> comparisons</h3>
+          <span class="commit">4f6a104 optimize builtin removes</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Benchmark</th><th class="num">Before</th><th class="num">After</th><th class="num">Time Change</th><th class="num">Allocs</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>TreeBuiltin/RemoveMissing</code></td><td class="num">37.41 ns</td><td class="num">22.43 ns</td><td class="num good">-40.0%</td><td class="num">0 -> 0</td></tr>
+            <tr><td><code>TreeBuiltin/RemoveExistingMiddle</code></td><td class="num">774.2 ns</td><td class="num">674.2 ns</td><td class="num good">-12.9%</td><td class="num">16 -> 16</td></tr>
+            <tr><td><code>TreeBuiltin/RemoveExistingRandom</code></td><td class="num">1004 ns</td><td class="num">986.9 ns</td><td class="num good">-1.7%</td><td class="num">15 -> 15</td></tr>
+          </tbody>
+        </table>
+      </article>
     </div>
   </section>
 
   <section class="section">
     <h2>Latest Broad 100k Pass</h2>
     <p>
-      Sanity pass after direct builtin reverse ranges:
-      <code>go test -run '^$' -bench 'BenchmarkTree/100000' -benchmem -benchtime=300ms -count=3 .</code>.
+      Sanity pass after direct builtin removes:
+      <code>go test -run '^$' -bench 'BenchmarkTree(Builtin)?/100000/(...)$' -benchmem -benchtime=300ms -count=3 .</code>.
       Values below are medians from that run.
     </p>
     <table>
@@ -483,24 +505,27 @@
         <tr><th>Benchmark</th><th class="num">Median ns/op</th><th class="num">B/op</th><th class="num">Allocs/op</th><th>Readout</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>Entries</code></td><td class="num">1319857</td><td class="num">1605635</td><td class="num">1</td><td>Materializes the result slice; traversal bookkeeping is lower.</td></tr>
-        <tr><td><code>TreeBuiltin/Entries</code></td><td class="num">1495915</td><td class="num">1605632</td><td class="num">1</td><td>One public result slice; focused run shows the allocation reduction clearly.</td></tr>
-        <tr><td><code>TreeBuiltin/Get</code></td><td class="num">5.303</td><td class="num">0</td><td class="num">0</td><td>Direct built-in comparison path.</td></tr>
-        <tr><td><code>TreeBuiltin/GetRandom</code></td><td class="num">22.13</td><td class="num">0</td><td class="num">0</td><td>Random lookup benefits from avoiding wrapper comparison calls.</td></tr>
-        <tr><td><code>TreeBuiltin/Min</code></td><td class="num">3.156</td><td class="num">0</td><td class="num">0</td><td>Unsafe unwrap returns the internal entry pointer without a copy.</td></tr>
-        <tr><td><code>TreeBuiltin/Max</code></td><td class="num">3.149</td><td class="num">0</td><td class="num">0</td><td>Same zero-allocation unwrap for the largest entry.</td></tr>
-        <tr><td><code>TreeBuiltin/FromMiddle5</code></td><td class="num">16.05</td><td class="num">0</td><td class="num">0</td><td>Direct built-in forward seek.</td></tr>
-        <tr><td><code>TreeBuiltin/FromMiddle</code></td><td class="num">157894</td><td class="num">0</td><td class="num">0</td><td>Full upper-half wrapper scan; focused run is less noisy.</td></tr>
-        <tr><td><code>TreeBuiltin/BackwardFromMiddle5</code></td><td class="num">16.39</td><td class="num">0</td><td class="num">0</td><td>Direct built-in reverse seek.</td></tr>
-        <tr><td><code>TreeBuiltin/BackwardFromMiddle</code></td><td class="num">150250</td><td class="num">0</td><td class="num">0</td><td>Full lower-half wrapper scan; focused run is less noisy.</td></tr>
-        <tr><td><code>TreeBuiltin/InsertMax</code></td><td class="num">910.8</td><td class="num">912</td><td class="num">19</td><td>Write-path benchmark retained for future experiments.</td></tr>
-        <tr><td><code>All</code></td><td class="num">354344</td><td class="num">0</td><td class="num">0</td><td>Full forward traversal remains allocation-free.</td></tr>
-        <tr><td><code>Backward</code></td><td class="num">351507</td><td class="num">0</td><td class="num">0</td><td>Full reverse traversal in same performance band.</td></tr>
-        <tr><td><code>FromMiddle</code></td><td class="num">148681</td><td class="num">0</td><td class="num">0</td><td>Upper-half range scan.</td></tr>
-        <tr><td><code>BackwardFromMiddle</code></td><td class="num">139521</td><td class="num">0</td><td class="num">0</td><td>Lower-half reverse range scan.</td></tr>
-        <tr><td><code>RemoveMissing</code></td><td class="num">36.35</td><td class="num">0</td><td class="num">0</td><td>Fast miss path with pointer preservation.</td></tr>
-        <tr><td><code>GetRandom</code></td><td class="num">39.53</td><td class="num">0</td><td class="num">0</td><td>Generic random lookup stayed stable.</td></tr>
-        <tr><td><code>AllCreate</code></td><td class="num">19.79</td><td class="num">24</td><td class="num">1</td><td>Only materializing/storing the returned iterator closure allocates.</td></tr>
+        <tr><td><code>Entries</code></td><td class="num">1222638</td><td class="num">1605635</td><td class="num">1</td><td>Materializes the result slice; traversal bookkeeping is lower.</td></tr>
+        <tr><td><code>TreeBuiltin/Entries</code></td><td class="num">1666898</td><td class="num">1605632</td><td class="num">1</td><td>One public result slice; focused run shows the allocation reduction clearly.</td></tr>
+        <tr><td><code>TreeBuiltin/Get</code></td><td class="num">4.729</td><td class="num">0</td><td class="num">0</td><td>Direct built-in comparison path.</td></tr>
+        <tr><td><code>TreeBuiltin/GetRandom</code></td><td class="num">22.68</td><td class="num">0</td><td class="num">0</td><td>Random lookup benefits from avoiding wrapper comparison calls.</td></tr>
+        <tr><td><code>TreeBuiltin/Min</code></td><td class="num">3.007</td><td class="num">0</td><td class="num">0</td><td>Unsafe unwrap returns the internal entry pointer without a copy.</td></tr>
+        <tr><td><code>TreeBuiltin/Max</code></td><td class="num">3.048</td><td class="num">0</td><td class="num">0</td><td>Same zero-allocation unwrap for the largest entry.</td></tr>
+        <tr><td><code>TreeBuiltin/RemoveMissing</code></td><td class="num">22.15</td><td class="num">0</td><td class="num">0</td><td>Direct built-in delete miss path.</td></tr>
+        <tr><td><code>TreeBuiltin/RemoveExistingMiddle</code></td><td class="num">744.1</td><td class="num">768</td><td class="num">16</td><td>Two-child delete through the specialized wrapper path.</td></tr>
+        <tr><td><code>TreeBuiltin/RemoveExistingRandom</code></td><td class="num">823.4</td><td class="num">753</td><td class="num">15</td><td>Random existing delete remains allocation-equivalent.</td></tr>
+        <tr><td><code>TreeBuiltin/FromMiddle5</code></td><td class="num">16.79</td><td class="num">0</td><td class="num">0</td><td>Direct built-in forward seek.</td></tr>
+        <tr><td><code>TreeBuiltin/FromMiddle</code></td><td class="num">169399</td><td class="num">0</td><td class="num">0</td><td>Full upper-half wrapper scan; focused run is less noisy.</td></tr>
+        <tr><td><code>TreeBuiltin/BackwardFromMiddle5</code></td><td class="num">17.07</td><td class="num">0</td><td class="num">0</td><td>Direct built-in reverse seek.</td></tr>
+        <tr><td><code>TreeBuiltin/BackwardFromMiddle</code></td><td class="num">148380</td><td class="num">0</td><td class="num">0</td><td>Full lower-half wrapper scan; focused run is less noisy.</td></tr>
+        <tr><td><code>TreeBuiltin/InsertMax</code></td><td class="num">880.1</td><td class="num">912</td><td class="num">19</td><td>Write-path benchmark retained for future experiments.</td></tr>
+        <tr><td><code>All</code></td><td class="num">333866</td><td class="num">0</td><td class="num">0</td><td>Full forward traversal remains allocation-free.</td></tr>
+        <tr><td><code>Backward</code></td><td class="num">330747</td><td class="num">0</td><td class="num">0</td><td>Full reverse traversal in same performance band.</td></tr>
+        <tr><td><code>FromMiddle</code></td><td class="num">137875</td><td class="num">0</td><td class="num">0</td><td>Upper-half range scan.</td></tr>
+        <tr><td><code>BackwardFromMiddle</code></td><td class="num">129798</td><td class="num">0</td><td class="num">0</td><td>Lower-half reverse range scan.</td></tr>
+        <tr><td><code>RemoveMissing</code></td><td class="num">36.43</td><td class="num">0</td><td class="num">0</td><td>Generic fast miss path with pointer preservation.</td></tr>
+        <tr><td><code>GetRandom</code></td><td class="num">38.83</td><td class="num">0</td><td class="num">0</td><td>Generic random lookup stayed stable.</td></tr>
+        <tr><td><code>AllCreate</code></td><td class="num">21.75</td><td class="num">24</td><td class="num">1</td><td>Only materializing/storing the returned iterator closure allocates.</td></tr>
       </tbody>
     </table>
   </section>
@@ -539,7 +564,7 @@
     <p>
       The AVL implementation remains the public API and still satisfies persistent snapshot behavior by closing iterators over
       immutable roots. The high-value gains came from removing recursive iterator overhead and avoiding work on missing deletes.
-      Existing random lookups and min/max access are already small enough that recent micro-experiments were dominated by noise.
+      Builtin wrapper paths now avoid comparison-wrapper overhead for lookups, ranges, min/max, and removes where benchmarks support it.
     </p>
     <p>
       Next promising targets are write-path allocations for successful insert/remove and deeper comparison with the experimental B-tree,

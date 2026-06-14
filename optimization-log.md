@@ -404,41 +404,68 @@ Notes:
 - Five-item reverse range improved by 49.8%.
 - Full lower-half reverse scan improved by 4.8% and remains zero-allocation.
 
-### Post-Entries broad benchmark snapshot
+### Experiment 21: direct `NodeBuiltin.Remove` comparisons
+
+Change:
+- Added `BenchmarkTreeBuiltin/*/RemoveMissing`, `RemoveExistingMiddle`, and `RemoveExistingRandom` coverage.
+- Replaced `NodeBuiltin.Remove`'s `Builtin[K]` wrapper call into the generic tree with a direct recursive delete using `<` on the built-in key type.
+- Added `TestRemoveBuiltin` for a two-child delete, persistence, and missing-delete pointer preservation.
+
+Result:
+- Tests: `go test ./...` passed.
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTreeBuiltin/100000/RemoveMissing` | 37.41 | 22.43 | 0 | 0 | Keep |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingMiddle` | 774.2 | 674.2 | 768 | 16 | Keep |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingRandom` | 1004 | 986.9 | 753 | 15 | Keep |
+
+Notes:
+- Missing builtin remove improved by 40.0%.
+- Existing middle-key remove improved by 12.9% in the focused run; random existing remove was only 1.7% faster and should be treated as roughly neutral.
+- Allocation counts are unchanged.
+
+### Latest broad benchmark snapshot
 
 Command:
-- `go test -run '^$' -bench 'BenchmarkTree/100000' -benchmem -benchtime=300ms -count=3 .`
+- `go test -run '^$' -bench 'BenchmarkTree(Builtin)?/100000/(InsertRemove|InsertMax|RemoveMissing|RemoveExistingMiddle|RemoveExistingRandom|Entries|All|AllCreate|All5|Backward|Backward5|FromMiddle5|FromMiddle|BackwardFromMiddle5|BackwardFromMiddle|Get|GetRandom|Min|Max)$' -benchmem -benchtime=300ms -count=3 .`
 
-Median results from the run after experiment 20:
+Median results from the run after experiment 21:
 
 | Benchmark | Median ns/op | B/op | allocs/op |
 | --- | ---: | ---: | ---: |
-| `BenchmarkTree/100000/InsertRemove` | 2147 | 1680 | 35 |
-| `BenchmarkTree/100000/RemoveMissing` | 36.35 | 0 | 0 |
-| `BenchmarkTree/100000/RemoveExistingMiddle` | 753.7 | 768 | 16 |
-| `BenchmarkTree/100000/RemoveExistingRandom` | 979.5 | 753 | 15 |
-| `BenchmarkTree/100000/Entries` | 1319857 | 1605635 | 1 |
-| `BenchmarkTree/100000/All` | 354344 | 0 | 0 |
-| `BenchmarkTree/100000/AllCreate` | 19.79 | 24 | 1 |
-| `BenchmarkTree/100000/All5` | 18.93 | 0 | 0 |
-| `BenchmarkTree/100000/Backward` | 351507 | 0 | 0 |
-| `BenchmarkTree/100000/Backward5` | 15.32 | 0 | 0 |
-| `BenchmarkTree/100000/FromMiddle5` | 30.88 | 0 | 0 |
-| `BenchmarkTree/100000/FromMiddle` | 148681 | 0 | 0 |
-| `BenchmarkTree/100000/BackwardFromMiddle5` | 31.50 | 0 | 0 |
-| `BenchmarkTree/100000/BackwardFromMiddle` | 139521 | 0 | 0 |
-| `BenchmarkTree/100000/Get` | 19.98 | 0 | 0 |
-| `BenchmarkTree/100000/GetRandom` | 39.53 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/InsertMax` | 910.8 | 912 | 19 |
-| `BenchmarkTreeBuiltin/100000/Entries` | 1495915 | 1605632 | 1 |
-| `BenchmarkTreeBuiltin/100000/Get` | 5.303 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/GetRandom` | 22.13 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/Min` | 3.156 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/Max` | 3.149 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/All` | 450956 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/AllCreate` | 19.62 | 24 | 1 |
-| `BenchmarkTreeBuiltin/100000/All5` | 15.96 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/FromMiddle5` | 16.05 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/FromMiddle` | 157894 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/BackwardFromMiddle5` | 16.39 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/BackwardFromMiddle` | 150250 | 0 | 0 |
+| `BenchmarkTree/100000/InsertRemove` | 1723 | 1680 | 35 |
+| `BenchmarkTree/100000/RemoveMissing` | 36.43 | 0 | 0 |
+| `BenchmarkTree/100000/RemoveExistingMiddle` | 874.9 | 768 | 16 |
+| `BenchmarkTree/100000/RemoveExistingRandom` | 1002 | 753 | 15 |
+| `BenchmarkTree/100000/Entries` | 1222638 | 1605635 | 1 |
+| `BenchmarkTree/100000/All` | 333866 | 0 | 0 |
+| `BenchmarkTree/100000/AllCreate` | 21.75 | 24 | 1 |
+| `BenchmarkTree/100000/All5` | 15.91 | 0 | 0 |
+| `BenchmarkTree/100000/Backward` | 330747 | 0 | 0 |
+| `BenchmarkTree/100000/Backward5` | 15.14 | 0 | 0 |
+| `BenchmarkTree/100000/FromMiddle5` | 31.17 | 0 | 0 |
+| `BenchmarkTree/100000/FromMiddle` | 137875 | 0 | 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle5` | 31.34 | 0 | 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle` | 129798 | 0 | 0 |
+| `BenchmarkTree/100000/Min` | 4.506 | 0 | 0 |
+| `BenchmarkTree/100000/Max` | 3.259 | 0 | 0 |
+| `BenchmarkTree/100000/Get` | 22.50 | 0 | 0 |
+| `BenchmarkTree/100000/GetRandom` | 38.83 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/InsertMax` | 880.1 | 912 | 19 |
+| `BenchmarkTreeBuiltin/100000/RemoveMissing` | 22.15 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingMiddle` | 744.1 | 768 | 16 |
+| `BenchmarkTreeBuiltin/100000/RemoveExistingRandom` | 823.4 | 753 | 15 |
+| `BenchmarkTreeBuiltin/100000/Entries` | 1666898 | 1605632 | 1 |
+| `BenchmarkTreeBuiltin/100000/Get` | 4.729 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/GetRandom` | 22.68 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/Min` | 3.007 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/Max` | 3.048 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/All` | 405368 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/AllCreate` | 19.24 | 24 | 1 |
+| `BenchmarkTreeBuiltin/100000/All5` | 15.88 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/FromMiddle5` | 16.79 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/FromMiddle` | 169399 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/BackwardFromMiddle5` | 17.07 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/BackwardFromMiddle` | 148380 | 0 | 0 |
