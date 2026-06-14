@@ -215,3 +215,23 @@ Result:
 
 Notes:
 - One `FromMiddle5` sample was an outlier; the other four experiment samples were tightly clustered around 31-33 ns/op.
+
+### Experiment 11: iterative `BackwardFrom`
+
+Change:
+- Added `BackwardFromMiddle5` and `BackwardFromMiddle` benchmarks.
+- Replaced recursive `BackwardFrom` seek/traversal with an explicit reverse stack:
+  - seek pushes the path of candidate nodes with key `<= k`;
+  - traversal then continues in descending order without recursion.
+
+Result:
+- Tests: `go test ./...` passed.
+- Focused 100k benchmark medians with `-benchtime=500ms -count=5`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/BackwardFromMiddle5` | 52.40 | 31.19 | 0 | 0 | Keep |
+| `BenchmarkTree/100000/BackwardFromMiddle` | 335569 | 125301 | 0 | 0 | Keep |
+
+Notes:
+- One `BackwardFromMiddle5` sample was an outlier; the other four experiment samples were 30-36 ns/op.

@@ -442,62 +442,28 @@ func (node *Node[K, V]) From(k K) iter.Seq2[K, V] {
 // The iteration proceeds in descending order.
 func (node *Node[K, V]) BackwardFrom(k K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		// Phase 2: Unconditional Reverse Traversal
-		// Used for left subtrees of valid nodes (since Left < Node <= k).
-		// Traverses: Right -> Node -> Left
-		var iterate func(*Node[K, V]) bool
-		iterate = func(n *Node[K, V]) bool {
-			if n == nil {
-				return true
+		var preallocated [64]*Node[K, V]
+		stack := preallocated[:0]
+		finger := node
+		for finger != nil {
+			if k.Less(finger.entry.K) {
+				finger = finger.children[0]
+			} else {
+				stack = append(stack, finger)
+				finger = finger.children[1]
 			}
-			// 1. Right (Largest)
-			if !iterate(n.children[1]) {
-				return false
-			}
-			// 2. Current
-			if !yield(n.entry.K, n.entry.V) {
-				return false
-			}
-			// 3. Left (Smallest)
-			return iterate(n.children[0])
 		}
-
-		// Phase 1: Seeking the Boundary
-		// Performs comparisons to prune Right subtrees.
-		var seek func(*Node[K, V]) bool
-		seek = func(n *Node[K, V]) bool {
-			if n == nil {
-				return true
+		for len(stack) > 0 {
+			finger = stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			if !yield(finger.entry.K, finger.entry.V) {
+				return
 			}
-
-			// Check if Node > k.
-			// (Assuming standard Less interface: k < n implies n > k)
-			if k.Less(n.entry.K) {
-				// This node is too big. The right subtree is even bigger.
-				// Skip everything here and search the left subtree.
-				return seek(n.children[0])
+			finger = finger.children[0]
+			for finger != nil {
+				stack = append(stack, finger)
+				finger = finger.children[1]
 			}
-
-			// If we are here, n <= k.
-
-			// 1. The boundary might be deep in the Right subtree.
-			//    (There could be nodes > n but still <= k)
-			if !seek(n.children[1]) {
-				return false
-			}
-
-			// 2. This node is valid.
-			if !yield(n.entry.K, n.entry.V) {
-				return false
-			}
-
-			// 3. OPTIMIZATION:
-			// Since n <= k, all nodes in the Left subtree are < n.
-			// Therefore, they are all < k.
-			// Switch to unconditional 'iterate'.
-			return iterate(n.children[0])
 		}
-
-		seek(node)
 	}
 }
