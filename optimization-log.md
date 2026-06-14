@@ -483,6 +483,27 @@ Result:
 Follow-up:
 - Reverted. The smaller fields did not reduce B/op because allocations stayed in the same Go allocator size class, and CPU results were mixed with insert regression.
 
+### Experiment 25: 32-pointer traversal stack reserve
+
+Change:
+- Tried reducing all iterator/materialization stack reserves from `[64]*Node` to `[32]*Node`.
+
+Result:
+- Focused 100k benchmark medians with `-benchtime=300ms -count=5`:
+
+| Benchmark | Baseline ns/op | Experiment ns/op | B/op | allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTree/100000/All` | 306342 | 325862 | 0 | 0 | Rejected |
+| `BenchmarkTree/100000/All5` | 16.98 | 14.67 | 0 | 0 | Mixed |
+| `BenchmarkTree/100000/Backward5` | 15.20 | 13.90 | 0 | 0 | Mixed |
+| `BenchmarkTree/100000/BackwardFromMiddle` | 141442 | 153109 | 0 | 0 | Rejected |
+| `BenchmarkTreeBuiltin/100000/All` | 349643 | 329603 | 0 | 0 | Mixed |
+| `BenchmarkTreeBuiltin/100000/Backward5` | 15.85 | 14.11 | 0 | 0 | Mixed |
+| `BenchmarkTreeBuiltin/100000/BackwardFromMiddle` | 130476 | 139608 | 0 | 0 | Rejected |
+
+Follow-up:
+- Reverted. Smaller stack reserves helped some early-termination cases, but hurt important full/range iteration paths and did not reduce allocations.
+
 ### Latest broad benchmark snapshot
 
 Command:
