@@ -317,10 +317,11 @@ type entriesFrame[K Comparable[K], V any] struct {
 
 // Entries returns a slice of all key-value pairs in the map, sorted by key.
 func (node *Node[K, V]) Entries() []Entry[K, V] {
-	elems := make([]Entry[K, V], 0, node.Len())
+	elems := make([]Entry[K, V], node.Len())
 	if node == nil {
 		return elems
 	}
+	index := 0
 	var preallocated [20]entriesFrame[K, V] // preallocate on stack for common case
 	stack := preallocated[:0]
 	stack = append(stack, entriesFrame[K, V]{node, false})
@@ -334,7 +335,8 @@ func (node *Node[K, V]) Entries() []Entry[K, V] {
 			top.leftDone = true
 		} else {
 			stack = stack[:len(stack)-1] // pop
-			elems = append(elems, top.node.entry)
+			elems[index] = top.node.entry
+			index++
 			if top.node.children[1] != nil {
 				stack = append(stack, entriesFrame[K, V]{top.node.children[1], false})
 			}
