@@ -7,6 +7,7 @@ Process notes:
 - Benchmarks use short runs after the initial baseline: `-benchtime=200ms -count=3`.
 - CPU: AMD Ryzen AI 9 365 w/ Radeon 880M, linux/amd64.
 - Decision rule: keep changes that reduce allocations even if CPU time is neutral/noisy.
+- Executive HTML report: `optimization-report.html`.
 
 Clean baseline, public AVL API, 100k elements:
 
@@ -235,3 +236,32 @@ Result:
 
 Notes:
 - One `BackwardFromMiddle5` sample was an outlier; the other four experiment samples were 30-36 ns/op.
+
+### Post-iterator broad benchmark snapshot
+
+Command:
+- `go test -run '^$' -bench 'BenchmarkTree/100000' -benchmem -benchtime=300ms -count=3 .`
+
+Median results from the run after experiments 8-11:
+
+| Benchmark | Median ns/op | B/op | allocs/op |
+| --- | ---: | ---: | ---: |
+| `BenchmarkTree/100000/InsertRemove` | 2354 | 1680 | 35 |
+| `BenchmarkTree/100000/RemoveMissing` | 32.83 | 0 | 0 |
+| `BenchmarkTree/100000/RemoveExistingMiddle` | 795.0 | 768 | 16 |
+| `BenchmarkTree/100000/RemoveExistingRandom` | 1158 | 753 | 15 |
+| `BenchmarkTree/100000/Entries` | 1771341 | 1605635 | 1 |
+| `BenchmarkTree/100000/All` | 335720 | 0 | 0 |
+| `BenchmarkTree/100000/AllCreate` | 23.06 | 24 | 1 |
+| `BenchmarkTree/100000/All5` | 18.82 | 0 | 0 |
+| `BenchmarkTree/100000/Backward` | 357066 | 0 | 0 |
+| `BenchmarkTree/100000/Backward5` | 14.93 | 0 | 0 |
+| `BenchmarkTree/100000/FromMiddle5` | 33.33 | 0 | 0 |
+| `BenchmarkTree/100000/FromMiddle` | 137995 | 0 | 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle5` | 31.66 | 0 | 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle` | 137759 | 0 | 0 |
+| `BenchmarkTree/100000/Get` | 24.28 | 0 | 0 |
+| `BenchmarkTree/100000/GetRandom` | 41.71 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/All` | 488318 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/AllCreate` | 23.86 | 24 | 1 |
+| `BenchmarkTreeBuiltin/100000/All5` | 15.74 | 0 | 0 |

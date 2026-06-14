@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>go-ordmap Optimization Report</title>
+  <style>
+    :root {
+      --bg: #f7f7f4;
+      --ink: #202124;
+      --muted: #5e6366;
+      --line: #d8d8d2;
+      --panel: #ffffff;
+      --good: #0a7b4f;
+      --bad: #9a3412;
+      --blue: #22577a;
+      --chip: #eef3f7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 24px 56px;
+    }
+    h1, h2, h3 { line-height: 1.15; margin: 0; }
+    h1 { font-size: clamp(30px, 4vw, 48px); letter-spacing: 0; }
+    h2 { font-size: 22px; margin-top: 34px; }
+    h3 { font-size: 17px; margin-top: 18px; }
+    p { margin: 10px 0 0; }
+    a { color: var(--blue); }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+      background: #f0f0ec;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+    .hero {
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+    }
+    .subtitle {
+      color: var(--muted);
+      max-width: 760px;
+      font-size: 17px;
+      margin-top: 12px;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--chip);
+      border: 1px solid #dce6ed;
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: #2d4658;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 118px;
+    }
+    .metric {
+      font-size: 30px;
+      font-weight: 750;
+      letter-spacing: 0;
+      margin-top: 6px;
+    }
+    .label {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .good { color: var(--good); }
+    .bad { color: var(--bad); }
+    .section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      margin-top: 18px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 9px 10px;
+      border-bottom: 1px solid #e7e7e2;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: #394044;
+      background: #f5f5f1;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:last-child td { border-bottom: 0; }
+    .timeline {
+      position: relative;
+      margin-top: 18px;
+      padding-left: 20px;
+    }
+    .timeline:before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 7px;
+      bottom: 5px;
+      width: 2px;
+      background: var(--line);
+    }
+    .event {
+      position: relative;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 0 0 12px;
+    }
+    .event:before {
+      content: "";
+      position: absolute;
+      left: -20px;
+      top: 17px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 2px solid var(--bg);
+    }
+    .event-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: baseline;
+    }
+    .commit {
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+    }
+    .note-list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+    }
+    .note-list li { margin: 5px 0; }
+    .status {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .status.keep { background: #e8f5ef; color: var(--good); }
+    .status.reject { background: #fff0e8; color: var(--bad); }
+    .foot {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 24px;
+    }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      table { font-size: 13px; }
+      th, td { padding: 8px 7px; }
+    }
+    @media (max-width: 560px) {
+      main { padding: 24px 14px 42px; }
+      .grid { grid-template-columns: 1fr; }
+      .section { padding: 14px; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <h1>go-ordmap Optimization Report</h1>
+    <p class="subtitle">
+      Executive summary of the 2026-06-14 benchmark-driven optimization pass for the persistent AVL ordered map.
+      Measurements use 100k elements on AMD Ryzen AI 9 365, linux/amd64.
+    </p>
+    <div class="meta">
+      <span class="pill">API unchanged</span>
+      <span class="pill">O(1) snapshots retained</span>
+      <span class="pill">Direct iterator range: 0 allocs/op</span>
+      <span class="pill">Latest keeper commit: <code>4bca8e5</code></span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>TL;DR</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="label">Missing remove</div>
+        <div class="metric good">97.1%</div>
+        <p>Faster and allocation-free: 17 allocs/op to 0.</p>
+      </div>
+      <div class="card">
+        <div class="label">Full forward iteration</div>
+        <div class="metric good">59.2%</div>
+        <p>Recursive traversal replaced with an explicit stack.</p>
+      </div>
+      <div class="card">
+        <div class="label">Full reverse iteration</div>
+        <div class="metric good">55.0%</div>
+        <p>Same stack-based traversal applied descending.</p>
+      </div>
+      <div class="card">
+        <div class="label">Range iteration</div>
+        <div class="metric good">61-63%</div>
+        <p>Middle half scans are much faster in both directions.</p>
+      </div>
+    </div>
+    <p>
+      The strongest wins are in iteration and missing deletes, matching the target workload properties:
+      cheap snapshots, fast in-order scans, and no added allocation pressure for normal range-over-func use.
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>Keeper Timeline</h2>
+    <div class="timeline">
+      <article class="event">
+        <div class="event-head">
+          <h3>Return unchanged tree on missing <code>Remove</code></h3>
+          <span class="commit">b774529 optimize missing removes</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Benchmark</th><th class="num">Before</th><th class="num">After</th><th class="num">Time Change</th><th class="num">Allocs</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>RemoveMissing</code></td><td class="num">1272 ns</td><td class="num">37.21 ns</td><td class="num good">-97.1%</td><td class="num good">17 -> 0</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="event">
+        <div class="event-head">
+          <h3>Iterative <code>All</code></h3>
+          <span class="commit">08d3ee0 optimize forward iteration</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Benchmark</th><th class="num">Before</th><th class="num">After</th><th class="num">Time Change</th><th class="num">Allocs</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>All</code></td><td class="num">897908 ns</td><td class="num">366729 ns</td><td class="num good">-59.2%</td><td class="num">0 -> 0</td></tr>
+            <tr><td><code>All5</code></td><td class="num">43.22 ns</td><td class="num">17.47 ns</td><td class="num good">-59.6%</td><td class="num">0 -> 0</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="event">
+        <div class="event-head">
+          <h3>Iterative <code>Backward</code></h3>
+          <span class="commit">71d2ac4 optimize reverse iteration</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Benchmark</th><th class="num">Before</th><th class="num">After</th><th class="num">Time Change</th><th class="num">Allocs</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>Backward</code></td><td class="num">728071 ns</td><td class="num">327899 ns</td><td class="num good">-55.0%</td><td class="num">0 -> 0</td></tr>
+            <tr><td><code>Backward5</code></td><td class="num">39.46 ns</td><td class="num">15.42 ns</td><td class="num good">-60.9%</td><td class="num">0 -> 0</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="event">
+        <div class="event-head">
+          <h3>Iterative <code>From</code></h3>
+          <span class="commit">60ab5e1 optimize forward range iteration</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Benchmark</th><th class="num">Before</th><th class="num">After</th><th class="num">Time Change</th><th class="num">Allocs</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>FromMiddle</code></td><td class="num">367096 ns</td><td class="num">141452 ns</td><td class="num good">-61.5%</td><td class="num">0 -> 0</td></tr>
+            <tr><td><code>FromMiddle5</code></td><td class="num">49.07 ns</td><td class="num">32.48 ns</td><td class="num good">-33.8%</td><td class="num">0 -> 0</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="event">
+        <div class="event-head">
+          <h3>Iterative <code>BackwardFrom</code></h3>
+          <span class="commit">4bca8e5 optimize reverse range iteration</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Benchmark</th><th class="num">Before</th><th class="num">After</th><th class="num">Time Change</th><th class="num">Allocs</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>BackwardFromMiddle</code></td><td class="num">335569 ns</td><td class="num">125301 ns</td><td class="num good">-62.7%</td><td class="num">0 -> 0</td></tr>
+            <tr><td><code>BackwardFromMiddle5</code></td><td class="num">52.40 ns</td><td class="num">31.19 ns</td><td class="num good">-40.5%</td><td class="num">0 -> 0</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Latest Broad 100k Pass</h2>
+    <p>
+      Sanity pass after iterator optimizations:
+      <code>go test -run '^$' -bench 'BenchmarkTree/100000' -benchmem -benchtime=300ms -count=3 .</code>.
+      Values below are medians from that run.
+    </p>
+    <table>
+      <thead>
+        <tr><th>Benchmark</th><th class="num">Median ns/op</th><th class="num">B/op</th><th class="num">Allocs/op</th><th>Readout</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>All</code></td><td class="num">335720</td><td class="num">0</td><td class="num">0</td><td>Full forward traversal remains fast and allocation-free.</td></tr>
+        <tr><td><code>Backward</code></td><td class="num">357066</td><td class="num">0</td><td class="num">0</td><td>Full reverse traversal in same performance band.</td></tr>
+        <tr><td><code>FromMiddle</code></td><td class="num">137995</td><td class="num">0</td><td class="num">0</td><td>Upper-half range scan.</td></tr>
+        <tr><td><code>BackwardFromMiddle</code></td><td class="num">137759</td><td class="num">0</td><td class="num">0</td><td>Lower-half reverse range scan.</td></tr>
+        <tr><td><code>RemoveMissing</code></td><td class="num">32.83</td><td class="num">0</td><td class="num">0</td><td>Fast miss path with pointer preservation.</td></tr>
+        <tr><td><code>GetRandom</code></td><td class="num">41.71</td><td class="num">0</td><td class="num">0</td><td>Random lookup stayed stable.</td></tr>
+        <tr><td><code>AllCreate</code></td><td class="num">23.06</td><td class="num">24</td><td class="num">1</td><td>Only materializing/storing the returned iterator closure allocates.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <h2>Rejected Experiments</h2>
+    <table>
+      <thead>
+        <tr><th>Experiment</th><th>Outcome</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Direct <code>Min</code>/<code>Max</code> loops</td><td><span class="status reject">Rejected</span></td><td>Median time got slightly worse; no allocation benefit.</td></tr>
+        <tr><td>One-pass predecessor removal</td><td><span class="status reject">Rejected</span></td><td>Too close to run noise; allocations unchanged.</td></tr>
+        <tr><td>Explicit <code>left</code>/<code>right</code> fields</td><td><span class="status reject">Rejected</span></td><td>Full iteration and <code>Entries</code> got slower.</td></tr>
+        <tr><td>Recursive pre-sized <code>Entries</code></td><td><span class="status reject">Rejected</span></td><td>Slower than the existing explicit stack despite avoiding append.</td></tr>
+        <tr><td>Cached heights in <code>rotate</code></td><td><span class="status reject">Rejected</span></td><td>Mixed CPU results, no allocation reduction, more complex code.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="section">
+    <h2>Allocation Notes</h2>
+    <ul class="note-list">
+      <li>Direct range use such as <code>for k, v := range tree.All()</code> remains <strong>0 B/op, 0 allocs/op</strong>.</li>
+      <li>Escape analysis says returned iterator closures can escape when the <code>iter.Seq2</code> value is materialized; this is expected for the current API.</li>
+      <li>Construction benchmark confirms storing <code>tree.All()</code> costs <strong>24 B/op, 1 alloc/op</strong>.</li>
+      <li>The explicit traversal stack itself does not escape: escape analysis reports <code>append(stack, finger) does not escape</code>.</li>
+      <li>Allocation-reducing changes are considered keeper-worthy even when CPU time is neutral or noisy.</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>Current Assessment</h2>
+    <p>
+      The AVL implementation remains the public API and still satisfies persistent snapshot behavior by closing iterators over
+      immutable roots. The high-value gains came from removing recursive iterator overhead and avoiding work on missing deletes.
+      Existing random lookups and min/max access are already small enough that recent micro-experiments were dominated by noise.
+    </p>
+    <p>
+      Next promising targets are write-path allocations for successful insert/remove and deeper comparison with the experimental B-tree,
+      but those should be evaluated carefully because earlier B-tree benchmarks include key allocation artifacts.
+    </p>
+  </section>
+
+  <p class="foot">
+    Source of truth: <code>optimization-log.md</code>. Report generated and maintained manually during the benchmark-driven optimization pass.
+  </p>
+</main>
+</body>
+</html>
