@@ -344,34 +344,57 @@ Follow-up:
 - Reverted the specialized insert path. It did not reduce allocations and moved median CPU time in the wrong direction.
 - Kept the benchmark coverage for future write-path experiments.
 
+### Experiment 18: allocation-free `NodeBuiltin.Min`/`Max`
+
+Change:
+- Added `BenchmarkTreeBuiltin/*/Min` and `Max` coverage.
+- Changed `NodeBuiltin.Min` and `Max` to cast the internal `*Entry[Builtin[K], V]` to `*Entry[K, V]` using `unsafe`, relying on `Builtin[K]` being a single-field wrapper around `K`.
+- Added `TestMinMaxBuiltin`.
+
+Result:
+- Tests: `go test ./...` passed.
+- Focused 100k benchmark medians with `-benchtime=500ms -count=7`:
+
+| Benchmark | Baseline ns/op | Baseline B/op | Baseline allocs/op | Experiment ns/op | Experiment B/op | Experiment allocs/op | Decision |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `BenchmarkTreeBuiltin/100000/Min` | 22.10 | 16 | 1 | 3.105 | 0 | 0 | Keep |
+| `BenchmarkTreeBuiltin/100000/Max` | 21.89 | 16 | 1 | 3.057 | 0 | 0 | Keep |
+
+Notes:
+- Allocation count drops from one heap entry copy to zero.
+- This makes `NodeBuiltin.Min`/`Max` match the generic `Node.Min`/`Max` behavior of returning a pointer to the tree's internal entry.
+
 ### Post-Entries broad benchmark snapshot
 
 Command:
 - `go test -run '^$' -bench 'BenchmarkTree/100000' -benchmem -benchtime=300ms -count=3 .`
 
-Median results from the run after experiment 16:
+Median results from the run after experiment 18:
 
 | Benchmark | Median ns/op | B/op | allocs/op |
 | --- | ---: | ---: | ---: |
-| `BenchmarkTree/100000/InsertRemove` | 2525 | 1680 | 35 |
-| `BenchmarkTree/100000/RemoveMissing` | 36.53 | 0 | 0 |
-| `BenchmarkTree/100000/RemoveExistingMiddle` | 912.7 | 768 | 16 |
-| `BenchmarkTree/100000/RemoveExistingRandom` | 1145 | 753 | 15 |
-| `BenchmarkTree/100000/Entries` | 1432056 | 1605637 | 1 |
-| `BenchmarkTree/100000/All` | 516646 | 0 | 0 |
-| `BenchmarkTree/100000/AllCreate` | 23.15 | 24 | 1 |
-| `BenchmarkTree/100000/All5` | 16.74 | 0 | 0 |
-| `BenchmarkTree/100000/Backward` | 362044 | 0 | 0 |
-| `BenchmarkTree/100000/Backward5` | 15.38 | 0 | 0 |
-| `BenchmarkTree/100000/FromMiddle5` | 31.39 | 0 | 0 |
-| `BenchmarkTree/100000/FromMiddle` | 140757 | 0 | 0 |
-| `BenchmarkTree/100000/BackwardFromMiddle5` | 30.02 | 0 | 0 |
-| `BenchmarkTree/100000/BackwardFromMiddle` | 135869 | 0 | 0 |
-| `BenchmarkTree/100000/Get` | 22.61 | 0 | 0 |
-| `BenchmarkTree/100000/GetRandom` | 38.09 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/Entries` | 1830829 | 1605633 | 1 |
-| `BenchmarkTreeBuiltin/100000/Get` | 5.004 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/GetRandom` | 21.56 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/All` | 466556 | 0 | 0 |
-| `BenchmarkTreeBuiltin/100000/AllCreate` | 22.90 | 24 | 1 |
-| `BenchmarkTreeBuiltin/100000/All5` | 15.30 | 0 | 0 |
+| `BenchmarkTree/100000/InsertRemove` | 2411 | 1680 | 35 |
+| `BenchmarkTree/100000/RemoveMissing` | 32.15 | 0 | 0 |
+| `BenchmarkTree/100000/RemoveExistingMiddle` | 659.9 | 768 | 16 |
+| `BenchmarkTree/100000/RemoveExistingRandom` | 1015 | 753 | 15 |
+| `BenchmarkTree/100000/Entries` | 1134818 | 1605638 | 1 |
+| `BenchmarkTree/100000/All` | 335728 | 0 | 0 |
+| `BenchmarkTree/100000/AllCreate` | 20.27 | 24 | 1 |
+| `BenchmarkTree/100000/All5` | 18.24 | 0 | 0 |
+| `BenchmarkTree/100000/Backward` | 337693 | 0 | 0 |
+| `BenchmarkTree/100000/Backward5` | 15.49 | 0 | 0 |
+| `BenchmarkTree/100000/FromMiddle5` | 31.20 | 0 | 0 |
+| `BenchmarkTree/100000/FromMiddle` | 141216 | 0 | 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle5` | 32.02 | 0 | 0 |
+| `BenchmarkTree/100000/BackwardFromMiddle` | 146050 | 0 | 0 |
+| `BenchmarkTree/100000/Get` | 20.49 | 0 | 0 |
+| `BenchmarkTree/100000/GetRandom` | 41.03 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/InsertMax` | 808.6 | 912 | 19 |
+| `BenchmarkTreeBuiltin/100000/Entries` | 1774959 | 1605634 | 1 |
+| `BenchmarkTreeBuiltin/100000/Get` | 4.734 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/GetRandom` | 22.20 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/Min` | 3.076 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/Max` | 3.261 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/All` | 493856 | 0 | 0 |
+| `BenchmarkTreeBuiltin/100000/AllCreate` | 20.46 | 24 | 1 |
+| `BenchmarkTreeBuiltin/100000/All5` | 16.74 | 0 | 0 |
