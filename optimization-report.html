@@ -214,7 +214,7 @@
       <span class="pill">API unchanged</span>
       <span class="pill">O(1) snapshots retained</span>
       <span class="pill">Direct iterator range: 0 allocs/op</span>
-      <span class="pill">Latest keeper commit: <code>abca6a0</code></span>
+      <span class="pill">Latest keeper commit: <code>2354f9f</code></span>
     </div>
   </section>
 
@@ -243,8 +243,8 @@
       </div>
       <div class="card">
         <div class="label">Entries materialization</div>
-        <div class="metric good">11.2%</div>
-        <p>Exact-length fill avoids append bookkeeping; still 1 alloc/op.</p>
+        <div class="metric good">32.4%</div>
+        <p>Exact-length fill plus pointer-stack traversal; still 1 alloc/op.</p>
       </div>
     </div>
     <p>
@@ -349,13 +349,28 @@
           </tbody>
         </table>
       </article>
+
+      <article class="event">
+        <div class="event-head">
+          <h3>Pointer-stack <code>Entries</code> traversal</h3>
+          <span class="commit">2354f9f optimize entries traversal</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Benchmark</th><th class="num">Before</th><th class="num">After</th><th class="num">Time Change</th><th class="num">Allocs</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>Entries</code></td><td class="num">1679869 ns</td><td class="num">1396732 ns</td><td class="num good">-16.9%</td><td class="num">1 -> 1</td></tr>
+          </tbody>
+        </table>
+      </article>
     </div>
   </section>
 
   <section class="section">
     <h2>Latest Broad 100k Pass</h2>
     <p>
-      Sanity pass after Entries materialization:
+      Sanity pass after pointer-stack Entries traversal:
       <code>go test -run '^$' -bench 'BenchmarkTree/100000' -benchmem -benchtime=300ms -count=3 .</code>.
       Values below are medians from that run.
     </p>
@@ -364,14 +379,14 @@
         <tr><th>Benchmark</th><th class="num">Median ns/op</th><th class="num">B/op</th><th class="num">Allocs/op</th><th>Readout</th></tr>
       </thead>
       <tbody>
-        <tr><td><code>Entries</code></td><td class="num">1673398</td><td class="num">1605635</td><td class="num">1</td><td>Materializes the result slice; traversal bookkeeping is lower.</td></tr>
-        <tr><td><code>All</code></td><td class="num">346347</td><td class="num">0</td><td class="num">0</td><td>Full forward traversal remains fast and allocation-free.</td></tr>
-        <tr><td><code>Backward</code></td><td class="num">340207</td><td class="num">0</td><td class="num">0</td><td>Full reverse traversal in same performance band.</td></tr>
-        <tr><td><code>FromMiddle</code></td><td class="num">147929</td><td class="num">0</td><td class="num">0</td><td>Upper-half range scan.</td></tr>
-        <tr><td><code>BackwardFromMiddle</code></td><td class="num">131637</td><td class="num">0</td><td class="num">0</td><td>Lower-half reverse range scan.</td></tr>
-        <tr><td><code>RemoveMissing</code></td><td class="num">37.21</td><td class="num">0</td><td class="num">0</td><td>Fast miss path with pointer preservation.</td></tr>
-        <tr><td><code>GetRandom</code></td><td class="num">40.61</td><td class="num">0</td><td class="num">0</td><td>Random lookup stayed stable.</td></tr>
-        <tr><td><code>AllCreate</code></td><td class="num">22.25</td><td class="num">24</td><td class="num">1</td><td>Only materializing/storing the returned iterator closure allocates.</td></tr>
+        <tr><td><code>Entries</code></td><td class="num">1065516</td><td class="num">1605637</td><td class="num">1</td><td>Materializes the result slice; traversal bookkeeping is lower.</td></tr>
+        <tr><td><code>All</code></td><td class="num">346866</td><td class="num">0</td><td class="num">0</td><td>Full forward traversal remains fast and allocation-free.</td></tr>
+        <tr><td><code>Backward</code></td><td class="num">320602</td><td class="num">0</td><td class="num">0</td><td>Full reverse traversal in same performance band.</td></tr>
+        <tr><td><code>FromMiddle</code></td><td class="num">140630</td><td class="num">0</td><td class="num">0</td><td>Upper-half range scan.</td></tr>
+        <tr><td><code>BackwardFromMiddle</code></td><td class="num">133363</td><td class="num">0</td><td class="num">0</td><td>Lower-half reverse range scan.</td></tr>
+        <tr><td><code>RemoveMissing</code></td><td class="num">37.32</td><td class="num">0</td><td class="num">0</td><td>Fast miss path with pointer preservation.</td></tr>
+        <tr><td><code>GetRandom</code></td><td class="num">39.24</td><td class="num">0</td><td class="num">0</td><td>Random lookup stayed stable.</td></tr>
+        <tr><td><code>AllCreate</code></td><td class="num">26.51</td><td class="num">24</td><td class="num">1</td><td>Only materializing/storing the returned iterator closure allocates.</td></tr>
       </tbody>
     </table>
   </section>
